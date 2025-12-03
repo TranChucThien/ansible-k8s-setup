@@ -1,0 +1,6 @@
+[masters]
+192.168.10.134 ansible_user=master ansible_ssh_pass=1 ansible_become_pass=1 ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_python_interpreter=/usr/bin/python3
+
+[workers]
+192.168.10.135 ansible_user=worker ansible_ssh_pass=1 ansible_become_pass=1 ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_python_interpreter=/usr/bin/python3
+192.168.10.136 ansible_user=worker ansible_ssh_pass=1 ansible_become_pass=1 ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_python_interpreter=/usr/bin/python3
