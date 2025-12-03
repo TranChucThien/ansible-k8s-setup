@@ -1,3 +1,14 @@
+# ⚠️  SECURITY WARNING: This is a sample inventory file for demonstration purposes only!
+# This file contains plaintext passwords and disables SSH host key checking.
+# DO NOT use this configuration in production environments.
+#
+# For production use:
+# - Use SSH key-based authentication instead of passwords
+# - Remove ansible_ssh_pass and ansible_become_pass
+# - Enable proper SSH host key checking
+# - Use Ansible Vault to encrypt sensitive data
+# - Follow security best practices
+
 [masters]
 192.168.10.134 ansible_user=master ansible_ssh_pass=1 ansible_become_pass=1 ansible_ssh_common_args='-o StrictHostKeyChecking=no' ansible_python_interpreter=/usr/bin/python3
 

@@ -27,6 +27,8 @@ ansible-k8s/
 nano inventory
 ```
 
+⚠️ **Security Notice**: This is a sample project. The inventory file may contain plaintext passwords and SSH keys for demonstration purposes. In production environments, use proper secret management, SSH key authentication, and Ansible Vault for sensitive data.
+
 2. Run playbook:
 ```bash
 ansible-playbook -i inventory playbooks/site.yml
@@ -36,6 +38,19 @@ ansible-playbook -i inventory playbooks/site.yml
 ```bash
 kubectl get nodes
 ```
+
+## Security Considerations
+
+⚠️ **Important**: This repository contains sample configurations that prioritize simplicity over security:
+- Inventory file may contain plaintext credentials
+- SSH configurations are basic
+- No encryption for sensitive data
+
+For production use:
+- Use SSH key-based authentication
+- Implement Ansible Vault for secrets
+- Follow security best practices
+- Review and harden all configurations
 
 ## Validate Source
 
