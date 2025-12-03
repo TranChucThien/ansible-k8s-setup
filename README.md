@@ -1,58 +1,58 @@
 # Kubernetes Ansible Setup
 
-Cài đặt Kubernetes cluster trên Ubuntu 24.04 bằng Ansible.
+Deploy Kubernetes cluster on Ubuntu 24.04 using Ansible.
 
-## Cấu trúc thư mục
+## Directory Structure
 
 ```
 ansible-k8s/
 ├── playbooks/           # Ansible playbooks
-│   ├── 01-common.yaml   # Cài đặt chung cho tất cả nodes
-│   ├── 02-master.yaml   # Thiết lập master node
-│   ├── 03-worker.yaml   # Thiết lập worker nodes
+│   ├── 01-common.yaml   # Common setup for all nodes
+│   ├── 02-master.yaml   # Master node setup
+│   ├── 03-worker.yaml   # Worker nodes setup
 │   └── site.yml         # Main playbook
-├── docs/                # Tài liệu
-│   ├── installation.md  # Hướng dẫn cài đặt thủ công
-│   ├── troubleshooting.md # Khắc phục sự cố
-│   └── connect-cluster.md # Kết nối cluster
-├── inventory            # Danh sách servers
+├── docs/                # Documentation
+│   ├── installation.md  # Manual installation guide
+│   ├── troubleshooting.md # Troubleshooting guide
+│   └── connect-cluster.md # Cluster connection guide
+├── inventory            # Server inventory
 ├── config               # Kubeconfig file
-└── SETUP-GUIDE.md       # Hướng dẫn tổ chức code
+└── SETUP-GUIDE.md       # Code organization guide
 ```
 
-## Sử dụng nhanh
+## Quick Start
 
-1. Cấu hình inventory:
+1. Configure inventory:
 ```bash
 nano inventory
 ```
 
-2. Chạy playbook:
+2. Run playbook:
 ```bash
 ansible-playbook -i inventory playbooks/site.yml
 ```
 
-3. Kiểm tra cluster:
+3. Check cluster:
 ```bash
 kubectl get nodes
 ```
 
-## Validate source
+## Validate Source
 
 ```bash
-# Kiểm tra syntax playbook
+# Check playbook syntax
 ansible-playbook --syntax-check playbooks/site.yml
-# (Warning về empty hosts list là bình thường)
+# (Warning about empty hosts list is normal)
 
-# Test kết nối tới servers
+# Test connection to servers
 ansible all -i inventory -m ping
 
-# Dry run (không thực thi)
+# Dry run (no execution)
 ansible-playbook -i inventory playbooks/site.yml --check
 ```
 
-## Tài liệu
+## Documentation
 
-- [Hướng dẫn cài đặt thủ công](docs/installation.md)
-- [Kết nối cluster](docs/connect-cluster.md)
-- [Khắc phục sự cố](docs/troubleshooting.md)
+- [Manual Installation Guide](docs/installation.md)
+- [Cluster Connection Guide](docs/connect-cluster.md)
+- [Troubleshooting Guide](docs/troubleshooting.md)

@@ -1,54 +1,54 @@
-# Hướng dẫn kết nối vào Kubernetes Cluster
+# Kubernetes Cluster Connection Guide
 
-## Bước 1: Lấy kubeconfig từ Master
+## Step 1: Get kubeconfig from Master
 ```bash
-# Copy kubeconfig từ master node
+# Copy kubeconfig from master node
 scp master@192.168.10.134:/home/master/.kube/config .
 ```
 
-## Bước 2: Merge config với config cũ
+## Step 2: Merge config with existing config
 ```bash
-# Backup config cũ (nếu có)
+# Backup existing config (if any)
 cp ~/.kube/config ~/.kube/config.backup 2>/dev/null || true
 
-# Merge config mới với config cũ
+# Merge new config with existing config
 export KUBECONFIG=~/.kube/config:./config
 kubectl config view --flatten > ~/.kube/merged-config
 mv ~/.kube/merged-config ~/.kube/config
 
-# Set quyền
+# Set permissions
 chmod 600 ~/.kube/config
 ```
 
-## Bước 3: Kiểm tra kết nối
+## Step 3: Test connection
 ```bash
 # Test cluster
 kubectl cluster-info
 
-# Xem nodes
+# View nodes
 kubectl get nodes
 
-# Xem pods
+# View pods
 kubectl get pods --all-namespaces
 ```
 
-## Lệnh hữu ích
+## Useful Commands
 ```bash
-# Xem context hiện tại
+# View current context
 kubectl config current-context
 
-# Đổi tên context
+# Rename context
 kubectl config rename-context kubernetes-admin@kubernetes my-k8s
 
-# Chuyển context
+# Switch context
 kubectl config use-context my-k8s
 ```
 
 ## Troubleshooting
 ```bash
-# Lỗi permission
+# Permission error
 chmod 600 ~/.kube/config
 
-# Lỗi connection
+# Connection error
 kubectl config set-cluster kubernetes --server=https://192.168.10.134:6443
 ```
