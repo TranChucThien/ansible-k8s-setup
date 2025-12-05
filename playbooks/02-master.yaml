@@ -59,13 +59,25 @@
     # Calico Network Plugin Installation
     #######################################################
 
-    # Step 7: Install the Calico operator using kubectl
-    - name: Step 7 - Deploy Calico operator
-      command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+#######################################################
+# Step 7: Install Calico operator (idempotent)
+#######################################################
+
+    # Check if Calico operator CRD exists
+    - name: Check if Calico operator CRD exists
+      command: kubectl get crd installations.operator.tigera.io
       environment:
         KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
-      ignore_errors: yes
+      register: calico_operator_crd
+      failed_when: false
+      changed_when: false
 
+    # Only create operator if CRD does NOT exist
+    - name: Step 7 - Deploy Calico operator
+      command: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      when: "'NotFound' in calico_operator_crd.stderr"
     # Step 8: Download the Calico custom resources manifest
     - name: Step 8 - Download Calico custom-resources file
       get_url:
