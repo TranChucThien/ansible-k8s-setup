@@ -5,7 +5,8 @@ Deploy Kubernetes cluster on Ubuntu 24.04 using Ansible.
 ## 🚀 Quick Links
 
 - **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster for dev/test
-- **[Multi-Master Setup (HA)](project-k8s-multimaster/README.md)** - Production-ready HA cluster
+- **[Multi-Master HA with HAProxy](project-k8s-multi-master-haproxy/README.md)** - HA cluster with HAProxy
+- **[Multi-Master HA with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/README.md)** - Full HA with VIP failover
 
 ## 📁 Directory Structure
 
@@ -20,7 +21,7 @@ ansible-k8s/
 │   ├── inventory                  # Server inventory
 │   └── README.md                  # Single master documentation
 │
-├── project-k8s-multimaster/       # Multi-master cluster (HA)
+├── project-k8s-multi-master-haproxy/  # Multi-master HA with HAProxy
 │   ├── playbooks/
 │   │   ├── 00-ha.yml              # Setup HAProxy load balancer
 │   │   ├── 01-common.yaml         # Common setup for all nodes
@@ -30,7 +31,24 @@ ansible-k8s/
 │   │   ├── haproxy.cfg.j2         # HAProxy configuration template
 │   │   └── site.yml               # Main playbook
 │   ├── inventory                  # Server inventory
-│   └── README.md                  # Multi-master documentation
+│   └── README.md                  # HAProxy setup documentation
+│
+├── project-k8s-multi-master-haproxy-keepalived/  # Full HA with VIP
+│   ├── playbooks/
+│   │   ├── 00-ha.yml              # Setup HAProxy + Keepalived
+│   │   ├── 01-common.yaml         # Common setup for all nodes
+│   │   ├── 02-cluster-init-master.yaml  # Initialize first master
+│   │   ├── 03-join-master.yaml    # Join additional masters
+│   │   ├── 03-join-worker.yaml    # Join worker nodes
+│   │   ├── haproxy.cfg.j2         # HAProxy configuration template
+│   │   └── site.yml               # Main playbook
+│   ├── inventory                  # Server inventory
+│   └── README.md                  # HAProxy + Keepalived documentation
+│
+├── project/                       # Work in progress (excluded from git)
+│   ├── groups_vars/
+│   ├── host_vars/
+│   └── roles/
 │
 ├── docs/                          # Documentation
 │   ├── installation.md            # Manual installation guide
@@ -41,21 +59,24 @@ ansible-k8s/
 │   ├── multi-master-setup.md      # Multi-master setup guide
 │   └── test-ha-cluster.md         # HA cluster testing guide
 │
+├── .gitignore                     # Git ignore rules
 ├── CHANGELOG.md                   # Version history
 └── README.md                      # This file
 ```
 
 ## 🎯 Which Setup Should I Use?
 
-| Feature | Single Master | Multi-Master (HA) |
-|---------|--------------|-------------------|
-| **Use Case** | Dev/Test | Production |
-| **High Availability** | ❌ No | ✅ Yes |
-| **Master Nodes** | 1 | 3+ |
-| **Load Balancer** | Not needed | HAProxy required |
-| **Complexity** | Simple | Moderate |
-| **Cost** | Lower | Higher |
-| **Downtime Risk** | High | Low |
+| Feature | Single Master | Multi-Master + HAProxy | Multi-Master + HAProxy + Keepalived |
+|---------|--------------|------------------------|-------------------------------------|
+| **Use Case** | Dev/Test | Production | Mission-Critical Production |
+| **High Availability** | ❌ No | ✅ Yes | ✅✅ Full HA |
+| **Master Nodes** | 1 | 3+ | 3+ |
+| **Load Balancer** | Not needed | HAProxy (1 node) | HAProxy (2+ nodes) |
+| **VIP Failover** | ❌ No | ❌ No | ✅ Yes (Keepalived) |
+| **Complexity** | Simple | Moderate | Advanced |
+| **Cost** | Lower | Medium | Higher |
+| **Downtime Risk** | High | Low | Very Low |
+| **SPOF** | Master node | HAProxy node | None |
 
 ## ⚡ Quick Start
 
@@ -70,16 +91,27 @@ ansible-playbook -i inventory playbooks/site.yml
 
 📖 **[Full Documentation](project-k8s-single-master/README.md)**
 
-### Option 2: Multi-Master (HA)
+### Option 2: Multi-Master with HAProxy
 
-**Best for**: Production, high availability requirements
+**Best for**: Production with HA requirements
 
 ```bash
-cd project-k8s-multimaster
+cd project-k8s-multi-master-haproxy
 ansible-playbook -i inventory playbooks/site.yml
 ```
 
-📖 **[Full Documentation](project-k8s-multimaster/README.md)**
+📖 **[Full Documentation](project-k8s-multi-master-haproxy/README.md)**
+
+### Option 3: Multi-Master with HAProxy + Keepalived
+
+**Best for**: Mission-critical production with full HA and VIP failover
+
+```bash
+cd project-k8s-multi-master-haproxy-keepalived
+ansible-playbook -i inventory playbooks/site.yml
+```
+
+📖 **[Full Documentation](project-k8s-multi-master-haproxy-keepalived/README.md)**
 
 ⚠️ **Security Notice**: This is a sample project. The inventory file may contain plaintext passwords and SSH keys for demonstration purposes. In production environments, use proper secret management, SSH key authentication, and Ansible Vault for sensitive data.
 
@@ -113,7 +145,8 @@ ansible-playbook -i inventory playbooks/site.yml --check
 
 ### Setup Guides
 - **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster setup
-- **[Multi-Master Setup (HA)](project-k8s-multimaster/README.md)** - HA cluster setup
+- **[Multi-Master with HAProxy](project-k8s-multi-master-haproxy/README.md)** - HA cluster with HAProxy
+- **[Multi-Master with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/README.md)** - Full HA with VIP failover
 
 ### General Guides
 - [Manual Installation Guide](docs/installation.md) - Step-by-step manual setup
