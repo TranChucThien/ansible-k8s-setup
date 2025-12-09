@@ -24,7 +24,7 @@
 
 ---
 - name: Common setup for all Kubernetes nodes
-  hosts: all
+  hosts: masters:workers
   become: yes
   vars:
     master_prefix: "k8s-master"

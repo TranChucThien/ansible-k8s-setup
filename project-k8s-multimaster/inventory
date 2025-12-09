@@ -6,7 +6,7 @@
 [workers]   
 192.168.10.142
 [ha]
-; 192.168.10.141
+192.168.10.141
 
 [masters:vars]
 ansible_user=master
