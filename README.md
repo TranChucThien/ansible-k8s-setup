@@ -2,28 +2,36 @@
 
 Deploy Kubernetes cluster on Ubuntu 24.04 using Ansible.
 
-## Directory Structure
+## 🚀 Quick Links
+
+- **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster for dev/test
+- **[Multi-Master Setup (HA)](project-k8s-multimaster/README.md)** - Production-ready HA cluster
+
+## 📁 Directory Structure
 
 ```
 ansible-k8s/
-├── project-k8s-simple-no-ha/      # Single master cluster (no HA)
+├── project-k8s-single-master/     # Single master cluster (Simple)
 │   ├── playbooks/
 │   │   ├── 01-common.yaml         # Common setup for all nodes
 │   │   ├── 02-master.yaml         # Master node setup
 │   │   ├── 03-worker.yaml         # Worker nodes setup
-│   │   ├── site.yml               # Main playbook
-│   │   └── join-command.txt       # Generated join command
-│   └── inventory                  # Server inventory
+│   │   └── site.yml               # Main playbook
+│   ├── inventory                  # Server inventory
+│   └── README.md                  # Single master documentation
+│
 ├── project-k8s-multimaster/       # Multi-master cluster (HA)
 │   ├── playbooks/
+│   │   ├── 00-ha.yml              # Setup HAProxy load balancer
 │   │   ├── 01-common.yaml         # Common setup for all nodes
 │   │   ├── 02-cluster-init-master.yaml  # Initialize first master
 │   │   ├── 03-join-master.yaml    # Join additional masters
 │   │   ├── 03-join-worker.yaml    # Join worker nodes
-│   │   ├── site.yml               # Main playbook
-│   │   ├── join-command.txt       # Generated worker join command
-│   │   └── join-command-master.txt # Generated master join command
-│   └── inventory                  # Server inventory
+│   │   ├── haproxy.cfg.j2         # HAProxy configuration template
+│   │   └── site.yml               # Main playbook
+│   ├── inventory                  # Server inventory
+│   └── README.md                  # Multi-master documentation
+│
 ├── docs/                          # Documentation
 │   ├── installation.md            # Manual installation guide
 │   ├── connect-cluster.md         # Cluster connection guide
@@ -32,47 +40,46 @@ ansible-k8s/
 │   ├── ha-setup.md                # HA setup guide
 │   ├── multi-master-setup.md      # Multi-master setup guide
 │   └── test-ha-cluster.md         # HA cluster testing guide
-├── inventory                      # Root inventory (optional)
+│
+├── CHANGELOG.md                   # Version history
 └── README.md                      # This file
 ```
 
-## Quick Start
+## 🎯 Which Setup Should I Use?
 
-### Option 1: Simple Cluster (Single Master - No HA)
+| Feature | Single Master | Multi-Master (HA) |
+|---------|--------------|-------------------|
+| **Use Case** | Dev/Test | Production |
+| **High Availability** | ❌ No | ✅ Yes |
+| **Master Nodes** | 1 | 3+ |
+| **Load Balancer** | Not needed | HAProxy required |
+| **Complexity** | Simple | Moderate |
+| **Cost** | Lower | Higher |
+| **Downtime Risk** | High | Low |
 
-1. Configure inventory:
+## ⚡ Quick Start
+
+### Option 1: Single Master (Simple)
+
+**Best for**: Development, testing, learning
+
 ```bash
-cd project-k8s-simple-no-ha
-nano inventory
-```
-
-2. Run playbook:
-```bash
+cd project-k8s-single-master
 ansible-playbook -i inventory playbooks/site.yml
 ```
 
-3. Check cluster:
-```bash
-kubectl get nodes
-```
+📖 **[Full Documentation](project-k8s-single-master/README.md)**
 
-### Option 2: Multi-Master Cluster (HA)
+### Option 2: Multi-Master (HA)
 
-1. Configure inventory:
+**Best for**: Production, high availability requirements
+
 ```bash
 cd project-k8s-multimaster
-nano inventory
-```
-
-2. Run playbook:
-```bash
 ansible-playbook -i inventory playbooks/site.yml
 ```
 
-3. Check cluster:
-```bash
-kubectl get nodes
-```
+📖 **[Full Documentation](project-k8s-multimaster/README.md)**
 
 ⚠️ **Security Notice**: This is a sample project. The inventory file may contain plaintext passwords and SSH keys for demonstration purposes. In production environments, use proper secret management, SSH key authentication, and Ansible Vault for sensitive data.
 
@@ -89,55 +96,57 @@ For production use:
 - Follow security best practices
 - Review and harden all configurations
 
-## Validate Source
+## ✅ Validation
 
-### For Simple Cluster:
 ```bash
-cd project-k8s-simple-no-ha
-
 # Check playbook syntax
-ansible-playbook --syntax-check playbooks/site.yml
+ansible-playbook --syntax-check -i inventory playbooks/site.yml
 
 # Test connection to servers
 ansible all -i inventory -m ping
 
-# Dry run (no execution)
+# Dry run (no actual changes)
 ansible-playbook -i inventory playbooks/site.yml --check
 ```
 
-### For Multi-Master Cluster:
-```bash
-cd project-k8s-multimaster
+## 📚 Documentation
 
-# Check playbook syntax
-ansible-playbook --syntax-check playbooks/site.yml
-
-# Test connection to servers
-ansible all -i inventory -m ping
-
-# Dry run (no execution)
-ansible-playbook -i inventory playbooks/site.yml --check
-```
-
-## Documentation
+### Setup Guides
+- **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster setup
+- **[Multi-Master Setup (HA)](project-k8s-multimaster/README.md)** - HA cluster setup
 
 ### General Guides
-- [Manual Installation Guide](docs/installation.md)
-- [Cluster Connection Guide](docs/connect-cluster.md)
-- [Troubleshooting Guide](docs/troubleshooting.md)
-- [Node Management Guide](docs/node-management.md)
+- [Manual Installation Guide](docs/installation.md) - Step-by-step manual setup
+- [Cluster Connection Guide](docs/connect-cluster.md) - Connect to your cluster
+- [Node Management Guide](docs/node-management.md) - Add/remove nodes
+- [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and fixes
 
-### High Availability (HA) Guides
-- [HA Setup Guide](docs/ha-setup.md)
-- [Multi-Master Setup Guide](docs/multi-master-setup.md)
-- [Test HA Cluster Guide](docs/test-ha-cluster.md)
+### High Availability Guides
+- [HA Setup Guide](docs/ha-setup.md) - HA architecture overview
+- [Multi-Master Setup Guide](docs/multi-master-setup.md) - Detailed HA setup
+- [Test HA Cluster Guide](docs/test-ha-cluster.md) - Verify HA functionality
 
-## Release
+## 🔧 Requirements
+
+- **OS**: Ubuntu 24.04 LTS
+- **Ansible**: 2.9+
+- **Python**: 3.x
+- **SSH**: Access to all nodes
+- **Privileges**: Root/sudo access
+
+## 📦 What Gets Installed
+
+- **Container Runtime**: containerd
+- **Kubernetes**: v1.33.x
+- **CNI Plugin**: Calico v3.28.0
+- **Load Balancer** (HA only): HAProxy
+
+## 🔄 Release Process
 
 ```bash
-# 1. Update CHANGELOG.md 
+# 1. Update CHANGELOG.md
 
-# 2. Commit và push
+# 2. Commit and push
 git add .
 git commit -m "Release v1.0.0"
 git push origin main
@@ -145,11 +154,22 @@ git push origin main
 # 3. Create tag
 git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
-
-# 4. Create release on GitHub/GitLab from tag v1.0.0
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## 📖 References
+
+### Official Documentation
+- [Kubernetes Official Documentation](https://kubernetes.io/vi/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) - Installing kubeadm
+
+### Tutorials & Guides
+- [Install Kubernetes on Ubuntu - Cherry Servers](https://www.cherryservers.com/blog/install-kubernetes-ubuntu) - Comprehensive Ubuntu installation guide
+- [Creating HA Kubernetes Cluster with kubeadm and HAProxy](https://blog.devops.dev/creating-a-highly-available-kubernetes-cluster-with-kubeadm-and-haproxy-best-practices-and-8de9001197de) - Best practices for HA setup
+- [Achieving High Availability in Kubernetes Clusters](https://kubeops.net/blog/achieving-high-availability-in-kubernetes-clusters) - HA architecture and strategies
+
+### Advanced Topics
+- [Raft Algorithm & Backup etcd](https://ezyinfra.dev/blog/raft-algo-backup-etcd) - Understanding etcd consensus and backup strategies
 
 ## Contributing
 
