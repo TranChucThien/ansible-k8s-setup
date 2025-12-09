@@ -1,0 +1,35 @@
+---
+- name: Join worker nodes to Kubernetes cluster
+  hosts: workers
+  become: yes
+  tasks:
+
+    - name: Read join command from local file
+      local_action: slurp src=./join-command.txt
+      register: join_cmd_file
+      run_once: true
+      become: no
+
+    - name: Set join command variable
+      set_fact:
+        join_command: "{{ join_cmd_file.content | b64decode | trim }}"
+      run_once: true
+
+    - name: Check if kubelet service is running
+      systemd:
+        name: kubelet
+      register: kubelet_status
+      ignore_errors: yes
+
+    - name: Join worker to Kubernetes cluster
+      command: "{{ join_command }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-bootstrap-kubelet.conf,FileAvailable--etc-kubernetes-pki-ca.crt"
+      register: join_result
+      when: kubelet_status.status.ActiveState != 'active'
+      ignore_errors: yes
+
+    - name: Show join output
+      debug:
+        var: join_result
+      when: join_result is defined
+
+

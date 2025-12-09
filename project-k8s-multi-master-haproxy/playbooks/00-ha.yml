@@ -1,0 +1,55 @@
+---
+- name: Setup HAProxy for Kubernetes API Load Balancing
+  hosts: ha
+  become: yes
+
+  vars:
+    haproxy_cfg_path: /etc/haproxy/haproxy.cfg
+    haproxy_backup_path: /etc/haproxy/haproxy.cfg.backup
+
+  tasks:
+
+    - name: Install HAProxy
+      apt:
+        name: haproxy
+        state: present
+        update_cache: yes
+
+    - name: Backup existing HAProxy config
+      copy:
+        src: "{{ haproxy_cfg_path }}"
+        dest: "{{ haproxy_backup_path }}"
+        remote_src: yes
+        force: no
+      ignore_errors: yes
+
+    - name: Generate HAProxy config from template
+      template:
+        src: haproxy.cfg.j2
+        dest: "{{ haproxy_cfg_path }}"
+        owner: root
+        group: root
+        mode: '0644'
+        validate: 'haproxy -c -f %s'
+      notify: Restart HAProxy
+
+    - name: Ensure HAProxy is enabled and started
+      systemd:
+        name: haproxy
+        enabled: yes
+        state: started
+
+    - name: Display HAProxy status
+      command: systemctl status haproxy --no-pager
+      register: haproxy_status
+      changed_when: false
+
+    - name: Show HAProxy status
+      debug:
+        var: haproxy_status.stdout_lines
+
+  handlers:
+    - name: Restart HAProxy
+      systemd:
+        name: haproxy
+        state: restarted
