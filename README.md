@@ -131,3 +131,34 @@ ansible-playbook -i inventory playbooks/site.yml --check
 - [HA Setup Guide](docs/ha-setup.md)
 - [Multi-Master Setup Guide](docs/multi-master-setup.md)
 - [Test HA Cluster Guide](docs/test-ha-cluster.md)
+
+## Release
+
+```bash
+# 1. Cập nhật CHANGELOG.md với các thay đổi mới
+
+# 2. Commit và push
+git add .
+git commit -m "Release v1.0.0"
+git push origin main
+
+# 3. Tạo tag
+git tag -a v1.0.0 -m "Release version 1.0.0"
+git push origin v1.0.0
+
+# 4. Tạo release trên GitHub/GitLab từ tag v1.0.0
+```
+
+See [CHANGELOG.md](CHANGELOG.md) for version history.
+
+## Contributing
+
+Contributions are welcome! Please ensure:
+- Test all playbooks before submitting
+- Update documentation for new features
+- Follow existing code style
+- Add entries to CHANGELOG.md
+
+## License
+
+This project is provided as-is for educational and demonstration purposes.

@@ -1,0 +1,28 @@
+# Ansible
+*.retry
+.ansible/
+
+# Generated files
+# **/join-command.txt
+# **/join-command-master.txt
+
+# Kubeconfig
+# config
+*.kubeconfig
+
+# Logs
+*.log
+
+# Temporary files
+*.tmp
+*.swp
+*~
+
+# IDE
+.vscode/
+.idea/
+*.iml
+
+# OS
+.DS_Store
+Thumbs.db
