@@ -19,7 +19,7 @@
     # Includes controlPlaneEndpoint for multi-master setup
     # Only runs if admin.conf doesn't exist (idempotency)
     - name: Step 1 - Initialize Kubernetes cluster with controlPlaneEndpoint
-      command: kubeadm init --pod-network-cidr=10.10.0.0/16 --control-plane-endpoint={{ inventory_hostname }}:6443 --upload-certs
+      command: kubeadm init --pod-network-cidr=10.10.0.0/16 --control-plane-endpoint=192.168.10.141:6443 --upload-certs
       register: kubeadm_init_output
       args:
         creates: /etc/kubernetes/admin.conf
@@ -28,6 +28,7 @@
     - name: Step 2 - Show kubeadm init output
       debug:
         var: kubeadm_init_output.stdout
+      when: kubeadm_init_output.changed
 
     # Step 3: Create .kube directory for the ansible user to store kubectl config
     - name: Step 3 - Create .kube directory for user
@@ -56,6 +57,19 @@
     # Step 6: Save the join command to a local file for later use
     - name: Step 6 - Save join command locally
       local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
+      run_once: true
+      become: no
+    
+    - name: Step 6 - Recreate certificate key
+      command: kubeadm init phase upload-certs --upload-certs
+      register: cert_key
+    
+    - name: Step 7 - Create new join command with new certificate key
+      command: kubeadm token create --print-join-command --certificate-key {{ cert_key.stdout_lines[-1].split()[-1] }}
+      register: new_join_cmd
+    
+    - name: Step 8 - Save new join command locally
+      local_action: copy content="{{ new_join_cmd.stdout }}" dest="./join-command-master.txt"
       run_once: true
       become: no
 
@@ -113,80 +127,3 @@
       until: "'Ready' in nodes_status.stdout"
       check_mode: no
 
-# ---
-# - name: Setup Kubernetes master with Calico network
-#   hosts: masters
-#   become: yes
-#   tasks:
-
-#     - name: Initialize Kubernetes cluster
-#       command: kubeadm init --pod-network-cidr=10.10.0.0/16
-#       register: kubeadm_init_output
-#       args:
-#         creates: /etc/kubernetes/admin.conf
-
-#     - name: Show kubeadm init output
-#       debug:
-#         var: kubeadm_init_output.stdout
-
-#     - name: Create .kube directory for user
-#       file:
-#         path: "/home/{{ ansible_user }}/.kube"
-#         state: directory
-#         owner: "{{ ansible_user }}"
-#         group: "{{ ansible_user }}"
-#         mode: '0755'
-
-#     - name: Copy admin.conf to user kube config
-#       copy:
-#         src: /etc/kubernetes/admin.conf
-#         dest: "/home/{{ ansible_user }}/.kube/config"
-#         remote_src: yes
-#         owner: "{{ ansible_user }}"
-#         group: "{{ ansible_user }}"
-#         mode: '0644'
-
-#     - name: Extract join command for workers
-#       shell: kubeadm token create --print-join-command
-#       register: join_cmd
-
-#     - name: Save join command locally
-#       local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
-#       run_once: true
-#       become: no
-
-#     #######################################################
-#     # Step 8: Install Calico network plugin
-#     #######################################################
-
-#     - name: Deploy Calico operator
-#       command: kubectl apply -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
-#       environment:
-#         KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
-#       ignore_errors: yes
-
-#     - name: Download Calico custom-resources file
-#       get_url:
-#         url: https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
-#         dest: /tmp/custom-resources.yaml
-
-#     - name: Update CIDR in custom-resources.yaml
-#       replace:
-#         path: /tmp/custom-resources.yaml
-#         regexp: 'cidr: 192\.168\.0\.0/16'
-#         replace: 'cidr: 10.10.0.0/16'
-
-#     - name: Apply Calico custom resources
-#       command: kubectl apply -f /tmp/custom-resources.yaml
-#       environment:
-#         KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
-#       ignore_errors: yes
-
-#     - name: Wait for all nodes to be ready (at least master)
-#       command: kubectl get nodes
-#       register: nodes_status
-#       environment:
-#         KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
-#       retries: 5
-#       delay: 10
-#       until: "'Ready' in nodes_status.stdout"

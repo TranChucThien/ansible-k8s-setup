@@ -1,1 +1,0 @@
-kubeadm join 192.168.10.138:6443 --token h672fl.d4u97xcbpa01yyvz --discovery-token-ca-cert-hash sha256:46cf2c85e8c5e8c1da478694a887c8a31ef51b377201b171d27c9440b266250f 

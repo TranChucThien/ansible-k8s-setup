@@ -1,6 +1,0 @@
----
-# Main playbook to deploy complete Kubernetes cluster
-- import_playbook: 01-common.yaml
-- import_playbook: 02-master.yaml
-- import_playbook: 02-masters-multi-join.yaml
-- import_playbook: 03-worker.yaml

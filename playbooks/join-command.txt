@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.138:6443 --token o4on2i.lupdk6srtioau8sx --discovery-token-ca-cert-hash sha256:a6dd2860fec7b1cc95468add80b9276ca5f56a4eb4633ec8c8d737cee8ae03bc 
+kubeadm join 192.168.10.138:6443 --token vsdexo.0gfef1kdie8y3gcd --discovery-token-ca-cert-hash sha256:2937c32779fb4795aa34d631a76b5247fe1ed3d24f1a3b8a664f5f69a37215e8 
