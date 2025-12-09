@@ -135,18 +135,18 @@ ansible-playbook -i inventory playbooks/site.yml --check
 ## Release
 
 ```bash
-# 1. Cập nhật CHANGELOG.md với các thay đổi mới
+# 1. Update CHANGELOG.md 
 
 # 2. Commit và push
 git add .
 git commit -m "Release v1.0.0"
 git push origin main
 
-# 3. Tạo tag
+# 3. Create tag
 git tag -a v1.0.0 -m "Release version 1.0.0"
 git push origin v1.0.0
 
-# 4. Tạo release trên GitHub/GitLab từ tag v1.0.0
+# 4. Create release on GitHub/GitLab from tag v1.0.0
 ```
 
 See [CHANGELOG.md](CHANGELOG.md) for version history.
