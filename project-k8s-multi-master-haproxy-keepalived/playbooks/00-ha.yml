@@ -6,14 +6,23 @@
   vars:
     haproxy_cfg_path: /etc/haproxy/haproxy.cfg
     haproxy_backup_path: /etc/haproxy/haproxy.cfg.backup
+    vip_address: "192.168.10.100"
+    vip_netmask: "24"
+    virtual_router_id: "51"
+    keepalived_auth_enabled: true  # Set false to disable authentication
+    keepalived_password: "123456"
+    network_interface: "ens33"
 
   tasks:
 
-    - name: Install HAProxy
+    - name: Install HAProxy and Keepalived
       apt:
-        name: haproxy
+        name: "{{ item }}"
         state: present
         update_cache: yes
+      loop:
+        - haproxy
+        - keepalived
 
     - name: Backup existing HAProxy config
       copy:
@@ -25,7 +34,7 @@
 
     - name: Generate HAProxy config from template
       template:
-        src: haproxy.cfg.j2
+        src: templates/haproxy.cfg.j2
         dest: "{{ haproxy_cfg_path }}"
         owner: root
         group: root
@@ -39,17 +48,48 @@
         enabled: yes
         state: started
 
+    - name: Configure Keepalived
+      template:
+        src: templates/keepalived.conf.j2
+        dest: /etc/keepalived/keepalived.conf
+        owner: root
+        group: root
+        mode: '0644'
+      notify: Restart Keepalived
+
+    - name: Ensure Keepalived is enabled and started
+      systemd:
+        name: keepalived
+        enabled: yes
+        state: started
+
+
+
     - name: Display HAProxy status
       command: systemctl status haproxy --no-pager
       register: haproxy_status
+      changed_when: false
+
+    - name: Display Keepalived status
+      command: systemctl status keepalived --no-pager
+      register: keepalived_status
       changed_when: false
 
     - name: Show HAProxy status
       debug:
         var: haproxy_status.stdout_lines
 
+    - name: Show Keepalived status
+      debug:
+        var: keepalived_status.stdout_lines
+
   handlers:
     - name: Restart HAProxy
       systemd:
         name: haproxy
+        state: restarted
+
+    - name: Restart Keepalived
+      systemd:
+        name: keepalived
         state: restarted

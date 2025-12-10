@@ -25,7 +25,7 @@
 
     - name: Generate HAProxy config from template
       template:
-        src: haproxy.cfg.j2
+        src: templates/haproxy.cfg.j2
         dest: "{{ haproxy_cfg_path }}"
         owner: root
         group: root
