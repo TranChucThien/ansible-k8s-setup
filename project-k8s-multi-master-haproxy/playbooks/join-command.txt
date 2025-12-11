@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.141:6443 --token vtg5yu.9tqylfcytqsg98s0 --discovery-token-ca-cert-hash sha256:39241f36800e53daf9e9a627ba0736a25dd9df476c1454c0a2754a1ccf224ee5 
+kubeadm join 192.168.10.141:6443 --token 1gad1z.qv5ki2d4lb0ugbfj --discovery-token-ca-cert-hash sha256:8314f2e6a8895e720546da879fc81e5961ba23a03faa450362b7900d92c03f6f 

@@ -1,4 +1,17 @@
----
+- name: Create command to join worker nodes to the cluster
+  hosts: masters[0]
+  become: yes
+  tasks:
+
+    - name: Generate the kubeadm join command for worker nodes
+      shell: kubeadm token create --print-join-command
+      register: join_cmd
+
+    - name: Save the join command to a local file for later use
+      local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
+      run_once: true
+      become: no
+      
 - name: Join worker nodes to Kubernetes cluster
   hosts: workers
   become: yes
@@ -15,16 +28,20 @@
         join_command: "{{ join_cmd_file.content | b64decode | trim }}"
       run_once: true
 
-    - name: Check if kubelet service is running
-      systemd:
-        name: kubelet
-      register: kubelet_status
-      ignore_errors: yes
+    - name: Check if node already joined cluster
+      stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_check
+
+    - name: Skip join if already joined
+      debug:
+        msg: "Node already joined cluster. Skipping join command."
+      when: kubelet_conf_check.stat.exists
 
     - name: Join worker to Kubernetes cluster
       command: "{{ join_command }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-bootstrap-kubelet.conf,FileAvailable--etc-kubernetes-pki-ca.crt"
       register: join_result
-      when: kubelet_status.status.ActiveState != 'active'
+      when: not kubelet_conf_check.stat.exists
       ignore_errors: yes
 
     - name: Show join output

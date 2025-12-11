@@ -1,4 +1,22 @@
 ---
+- name: Create join command for master nodes
+  hosts: masters[0]
+  become: yes
+  tasks:
+    - name: Step 6 - Recreate certificate key
+      command: kubeadm init phase upload-certs --upload-certs
+      register: cert_key
+    
+    - name: Step 7 - Create new join command with new certificate key
+      command: kubeadm token create --print-join-command --certificate-key {{ cert_key.stdout_lines[-1].split()[-1] }}
+      register: new_join_cmd
+    
+    - name: Step 8 - Save new join command locally
+      local_action: copy content="{{ new_join_cmd.stdout }}" dest="./join-command-master.txt"
+      run_once: true
+      become: no
+
+
 - name: Join worker nodes to Kubernetes cluster
   hosts: masters[1:]
   become: yes
