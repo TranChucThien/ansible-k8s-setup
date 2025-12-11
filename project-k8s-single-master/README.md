@@ -11,7 +11,8 @@ Deploy a simple Kubernetes cluster with a single master node using Ansible.
     └────────┬────────┘
              │
     ┌────────▼────────┐
-    │  Worker Nodes   │
+    │   Worker Node   │
+    │ (18.142.245.203)│
     └─────────────────┘
 ```
 
@@ -37,34 +38,75 @@ Deploy a simple Kubernetes cluster with a single master node using Ansible.
 ```
 project-k8s-single-master/
 ├── playbooks/
-│   ├── 01-common.yaml    # Common setup for all nodes
-│   ├── 02-master.yaml    # Setup master node
-│   ├── 03-worker.yaml    # Join worker nodes
-│   └── site.yml          # Main playbook (runs all)
-├── inventory             # Server inventory
-└── README.md             # This file
+│   ├── 01-common.yaml     # Common setup for all nodes
+│   ├── 02-master.yaml     # Setup master node
+│   ├── 03-worker.yaml     # Join worker nodes
+│   ├── clean-worker.yml   # Clean worker nodes only
+│   ├── clean-cluster.yml  # Clean entire cluster
+│   └── site.yml           # Main playbook (runs all)
+├── inventory              # Server inventory
+├── ansible-key.pem        # SSH private key (for EC2)
+└── README.md              # This file
 ```
 
 ## Quick Start
 
 ### 1. Configure Inventory
 
-Edit `inventory` file:
+Edit `inventory` file based on your environment:
 
+#### For EC2 Instances (Cloud)
 ```ini
 [masters]
-master1 ansible_host=192.168.10.138
+47.129.50.197
 
 [workers]
-worker1 ansible_host=192.168.10.139
-worker2 ansible_host=192.168.10.140
+18.142.245.203
+
+[masters:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[workers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+```
+
+#### For Local/Lab Environment
+```ini
+[masters]
+192.168.10.138
+
+[workers]
+192.168.10.142
 
 [masters:vars]
 ansible_user=master
+ansible_ssh_pass=1
+ansible_become_pass=1
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 
 [workers:vars]
 ansible_user=worker
+ansible_ssh_pass=1
+ansible_become_pass=1
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
 ```
+
+**For EC2 Setup:**
+- Ensure SSH key file has correct permissions: `chmod 600 ansible-key.pem`
+- Security Groups must allow SSH (port 22)
+- Replace `ansible-key.pem` with your actual key file name
 
 ### 2. Deploy Cluster
 
@@ -91,7 +133,6 @@ kubectl get nodes
 NAME           STATUS   ROLES           AGE   VERSION
 k8s-master-1   Ready    control-plane   5m    v1.33.6
 k8s-worker-1   Ready    <none>          3m    v1.33.6
-k8s-worker-2   Ready    <none>          3m    v1.33.6
 ```
 
 ## Configuration
@@ -177,8 +218,27 @@ ansible-playbook -i inventory playbooks/03-worker.yaml --limit worker3
 
 ## Cleanup
 
+### Clean Workers Only
 ```bash
-# Reset all nodes
+# Clean worker nodes (keeps master running)
+ansible-playbook -i inventory playbooks/clean-worker.yml
+
+# Then rejoin workers
+ansible-playbook -i inventory playbooks/03-worker.yaml
+```
+
+### Clean Entire Cluster
+```bash
+# Reset entire cluster (masters + workers)
+ansible-playbook -i inventory playbooks/clean-cluster.yml
+
+# Then redeploy from scratch
+ansible-playbook -i inventory playbooks/site.yml
+```
+
+### Manual Cleanup
+```bash
+# Reset all nodes manually
 ansible -i inventory all -b -m shell -a "kubeadm reset -f"
 
 # Clean up iptables
