@@ -53,29 +53,6 @@
         group: "{{ ansible_user }}"
         mode: '0644'
 
-    # Step 5: Generate the kubeadm join command for worker nodes
-    - name: Step 5 - Extract join command for workers
-      shell: kubeadm token create --print-join-command
-      register: join_cmd
-
-    # Step 6: Save the join command to a local file for later use
-    - name: Step 6 - Save join command locally
-      local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
-      run_once: true
-      become: no
-    
-    - name: Step 6 - Recreate certificate key
-      command: kubeadm init phase upload-certs --upload-certs
-      register: cert_key
-    
-    - name: Step 7 - Create new join command with new certificate key
-      command: kubeadm token create --print-join-command --certificate-key {{ cert_key.stdout_lines[-1].split()[-1] }}
-      register: new_join_cmd
-    
-    - name: Step 8 - Save new join command locally
-      local_action: copy content="{{ new_join_cmd.stdout }}" dest="./join-command-master.txt"
-      run_once: true
-      become: no
 
 
 

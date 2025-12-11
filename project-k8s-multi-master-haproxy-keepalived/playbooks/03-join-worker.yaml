@@ -1,4 +1,20 @@
 ---
+- name: Create join command for worker nodes
+  hosts: masters
+  become: yes
+  tasks:
+    # Step 5: Generate the kubeadm join command for worker nodes
+    - name: Step 5 - Extract join command for workers
+      shell: kubeadm token create --print-join-command
+      register: join_cmd
+
+    # Step 6: Save the join command to a local file for later use
+    - name: Step 6 - Save join command locally
+      local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
+      run_once: true
+      become: no
+
+
 - name: Join worker nodes to Kubernetes cluster
   hosts: workers
   become: yes

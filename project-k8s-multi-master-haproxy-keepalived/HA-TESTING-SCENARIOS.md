@@ -780,6 +780,13 @@ ETCDCTL_API=3 etcdctl \
   --key=etcd/healthcheck-client.key \
   endpoint status --write-out=table
 
+kubectl exec -n kube-system etcd-k8s-master-1 -- etcdctl \
+  --endpoints=https://k8s-master-1:2379,https://k8s-master-2:2379,https://k8s-master-3:2379 \
+  --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+  --cert=/etc/kubernetes/pki/etcd/server.crt \
+  --key=/etc/kubernetes/pki/etcd/server.key \
+  endpoint status --write-out=table
+
 # Expected Output (shows DB size, leader, etc.):
 # +-----------------------------+------------------+---------+---------+--------+-----------+------------+-----------+
 # |          ENDPOINT           |        ID        | VERSION | DB SIZE | IN USE | IS LEADER | RAFT TERM | RAFT INDEX |

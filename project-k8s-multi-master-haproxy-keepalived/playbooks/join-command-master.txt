@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.100:6443 --token ycx8tk.iprk79k8dovmwo9d --discovery-token-ca-cert-hash sha256:56fe4c10087db09a7eae2516b362f80da0a11de44f8e08906dd110da5667b75c --control-plane --certificate-key 6351cba96a9bffd0b4847e2829cd5c8695e6525f405653b187fca221397a168f
+kubeadm join 192.168.10.100:6443 --token ky586n.2e1natisfaotuxfm --discovery-token-ca-cert-hash sha256:00871096ea6d8e074c7c2078e8b9134715f831c032c01d8ea7bcc162a4bda5be --control-plane --certificate-key c00c7543017dd9cc10237ab5b0aeea9aa22f9cd4a8ab44decffb2b3db2f414f0
