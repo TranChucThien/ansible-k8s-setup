@@ -1,0 +1,32 @@
+# =============================================================================
+# Setup Cron Job for etcd Backup
+# =============================================================================
+# Purpose: Setup automated etcd backup using cron
+# Usage: ansible-playbook -i inventory playbooks/backup/setup-cron.yml
+# =============================================================================
+
+---
+- name: Setup cron job for etcd backup
+  hosts: localhost
+  become: no
+  vars:
+    backup_schedule: "* * * * *"  # Every minute for testing
+    playbook_path: "{{ ansible_env.PWD }}/01-etcd-backup.yml"
+    inventory_path: "{{ ansible_env.PWD }}/inventory"
+    
+  tasks:
+    - name: Create cron job for etcd backup
+      cron:
+        name: "K8s etcd backup"
+        minute: "*"
+        job: "cd {{ ansible_env.PWD }} && ansible-playbook -i {{ inventory_path }} {{ playbook_path }}"
+        
+    - name: Display cron setup
+      debug:
+        msg:
+          - "Cron job created successfully!"
+          - "Schedule: Every minute (for testing)"
+          - "Command: cd {{ ansible_env.PWD }} && ansible-playbook -i {{ inventory_path }} {{ playbook_path }}"
+          - ""
+          - "To view: crontab -l"
+          - "To remove: ansible-playbook -i inventory playbooks/backup/remove-cron.yml"

@@ -1,5 +1,5 @@
 # =============================================================================
-# Main Kubernetes Cluster Deployment Playbook
+# Kubernetes Cluster Setup Playbook
 # =============================================================================
 # Purpose: Deploy complete single-master Kubernetes cluster
 #
@@ -9,10 +9,10 @@
 # 3. Worker nodes join to cluster
 #
 # Usage:
-# ansible-playbook -i inventory playbooks/site.yml
+# ansible-playbook -i ../inventory playbooks/setup/site-setup.yml
 # =============================================================================
 
 ---
-- import_playbook: 01-setup/01-common.yaml
-- import_playbook: 01-setup/02-master.yaml
-- import_playbook: 01-setup/03-worker.yaml
+- import_playbook: 01-common.yaml
+- import_playbook: 02-master.yaml
+- import_playbook: 03-worker.yaml

@@ -20,7 +20,7 @@
   hosts: all
   become: yes
   vars:
-    log_file: "./logs/k8s-reset-{{ ansible_date_time.epoch }}.log"
+    log_file: "logs/k8s-reset-{{ ansible_date_time.epoch }}.log"
   tasks:
     - name: Log K8s reset start
       lineinfile:
@@ -29,6 +29,7 @@
         create: yes
       delegate_to: localhost
       become: no
+      
     - name: Reset kubeadm
       shell: kubeadm reset -f
       ignore_errors: yes

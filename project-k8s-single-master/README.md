@@ -4,7 +4,7 @@ Deploy a simple Kubernetes cluster with single master node using Ansible.
 
 ## 🏗️ Architecture
 
-```
+```text
 ┌─────────────────┐
 │   Master Node   │
 │ (Control Plane) │
@@ -18,7 +18,7 @@ Deploy a simple Kubernetes cluster with single master node using Ansible.
 
 ## 📁 Files Structure
 
-```
+```text
 project-k8s-single-master/
 ├── playbooks/
 │   ├── 01-common.yaml         # Common setup for all nodes
@@ -27,6 +27,12 @@ project-k8s-single-master/
 │   ├── clean-worker.yml       # Reset K8s configuration (all nodes)
 │   ├── site.yml               # Main deployment playbook
 │   └── logs/                  # Execution logs with timestamps
+├── troubleshooting/           # Issue diagnosis and solutions
+│   ├── common/                # Common deployment issues
+│   ├── master/                # Master node specific issues
+│   ├── worker/                # Worker node specific issues
+│   ├── network/               # Network and CNI issues
+│   └── README.md              # Troubleshooting guide
 ├── inventory                  # Cloud environment inventory
 ├── inventory-lab              # Lab environment inventory
 ├── ansible.cfg                # Ansible configuration with logging
@@ -122,6 +128,7 @@ For production, use [Multi-Master HA setup](../project-k8s-multi-master-haproxy/
 
 ## 🔗 Related
 
+- [Troubleshooting Guide](troubleshooting/README.md) - Issue diagnosis and solutions
 - [Multi-Master HA](../project-k8s-multi-master-haproxy/README.md)
 - [Multi-Master + Keepalived](../project-k8s-multi-master-haproxy-keepalived/README.md)
-- [Troubleshooting Guide](../docs/troubleshooting.md)
+- [General Troubleshooting](../docs/troubleshooting.md)
