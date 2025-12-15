@@ -1,5 +1,18 @@
+# =============================================================================
+# Main Kubernetes Cluster Deployment Playbook
+# =============================================================================
+# Purpose: Deploy complete single-master Kubernetes cluster
+#
+# Execution order:
+# 1. Common setup for all nodes (masters and workers)
+# 2. Master node initialization and Calico installation
+# 3. Worker nodes join to cluster
+#
+# Usage:
+# ansible-playbook -i inventory playbooks/site.yml
+# =============================================================================
+
 ---
-# Main playbook to deploy complete Kubernetes cluster
 - import_playbook: 01-common.yaml
 - import_playbook: 02-master.yaml
 - import_playbook: 03-worker.yaml

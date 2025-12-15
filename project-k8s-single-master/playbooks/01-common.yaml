@@ -32,7 +32,7 @@
 
   tasks:
 
-## Step 1: Set dynamic hostnames and update /etc/hosts
+    # Step 1: Set dynamic hostnames and update /etc/hosts
     - name: Determine hostname based on group
       set_fact:
         my_hostname: >-
@@ -56,7 +56,7 @@
         name: "{{ my_hostname }}"
 
 
-## Step 2: Disable swap (required for Kubernetes)
+    # Step 2: Disable swap (required for Kubernetes)
     - name: Disable swap immediately
       command: swapoff -a
 
@@ -66,7 +66,7 @@
         regexp: '^(.*\s+swap\s+.*)$'
         replace: '# \1'
 
-## Step 3: Load required kernel modules (br_netfilter, overlay)
+    # Step 3: Load required kernel modules (br_netfilter, overlay)
     - name: Load br_netfilter module and overlay module 
       modprobe:
         name: "{{ item }}"
@@ -82,7 +82,7 @@
           br_netfilter
           overlay
 
-## Step 4: Configure sysctl params for Kubernetes networking
+    # Step 4: Configure sysctl params for Kubernetes networking
     - name: Set sysctl params for Kubernetes networking
       copy:
         dest: /etc/sysctl.d/k8s.conf
@@ -94,7 +94,7 @@
     - name: Apply sysctl params without reboot
       command: sysctl --system
 
-## Step 5: Install and configure containerd runtime
+    # Step 5: Install and configure containerd runtime
     - name: Remove existing Docker repository file
       file:
         path: /etc/apt/sources.list.d/docker.list
@@ -152,7 +152,7 @@
 
 
 
-## Step 6: Install Kubernetes components (kubelet, kubeadm, kubectl)
+    # Step 6: Install Kubernetes components (kubelet, kubeadm, kubectl)
     - name: Install prequisite packages for Kubernetes
       apt:
         name: "{{ item }}"

@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.138:6443 --token b8sita.l9ixy43pkt08gzn1 --discovery-token-ca-cert-hash sha256:4e1c49f3068bf9b6d7474f5e64016346271ccd42af0929f6ead2cd2f2ea14e30 
+kubeadm join 192.168.10.138:6443 --token j5v214.yzoeamzlid8uk7o1 --discovery-token-ca-cert-hash sha256:dd2e91bbb01784a51db158be089b5d588ff89d61151caab0ddaf5780ce1938bd 

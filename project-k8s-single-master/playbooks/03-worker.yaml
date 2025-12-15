@@ -1,3 +1,20 @@
+# =============================================================================
+# Kubernetes Worker Nodes Setup Playbook
+# =============================================================================
+# Purpose: Join worker nodes to the Kubernetes cluster
+#
+# Steps performed:
+# 1. Generate join command from master node
+# 2. Save join command to local file
+# 3. Join worker nodes to cluster using the command
+#
+# Requirements:
+# - Master node must be initialized first (02-master.yaml)
+# - Worker nodes must have common setup completed (01-common.yaml)
+# =============================================================================
+
+---
+# Step 1: Generate join command from master
 - name: Create command to join worker nodes to the cluster
   hosts: masters[0]
   become: yes
@@ -11,7 +28,8 @@
       local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
       run_once: true
       become: no
-      
+
+# Step 2: Join worker nodes to cluster      
 - name: Join worker nodes to Kubernetes cluster
   hosts: workers
   become: yes

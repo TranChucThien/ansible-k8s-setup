@@ -1,0 +1,79 @@
+# =============================================================================
+# Kubernetes Nodes Reset Playbook
+# =============================================================================
+# Purpose: Reset Kubernetes configuration on all nodes (masters and workers)
+#
+# Actions performed:
+# - Reset kubeadm configuration
+# - Remove Kubernetes directories and data
+# - Remove CNI network configuration
+# - Remove kubectl configurations
+# - Clean iptables rules
+# - Restart services
+#
+# Usage:
+# ansible-playbook -i inventory playbooks/clean-worker.yml
+# =============================================================================
+
+---
+- name: Reset Kubernetes configuration on all nodes
+  hosts: all
+  become: yes
+  vars:
+    log_file: "./logs/k8s-reset-{{ ansible_date_time.epoch }}.log"
+  tasks:
+    - name: Log K8s reset start
+      local_action:
+        module: lineinfile
+        path: "{{ log_file }}"
+        line: "[{{ ansible_date_time.iso8601 }}] Starting K8s reset on {{ inventory_hostname }}"
+        create: yes
+      become: no
+    - name: Reset kubeadm
+      shell: kubeadm reset -f
+      ignore_errors: yes
+
+    - name: Remove Kubernetes configuration directory
+      file:
+        path: /etc/kubernetes
+        state: absent
+
+    - name: Remove kubelet data directory
+      file:
+        path: /var/lib/kubelet
+        state: absent
+
+    - name: Remove CNI configuration
+      file:
+        path: /etc/cni/net.d
+        state: absent
+
+    - name: Remove kube config
+      file:
+        path: "{{ ansible_env.HOME }}/.kube"
+        state: absent
+
+    - name: Restart kubelet
+      systemd:
+        name: kubelet
+        state: restarted
+
+    - name: Restart containerd
+      systemd:
+        name: containerd
+        state: restarted
+
+    - name: Clean iptables
+      shell: |
+        iptables -F
+        iptables -t nat -F
+        iptables -t mangle -F
+        iptables -X
+      ignore_errors: yes
+
+    - name: Log K8s reset completion
+      local_action:
+        module: lineinfile
+        path: "{{ log_file }}"
+        line: "[{{ ansible_date_time.iso8601 }}] K8s reset completed on {{ inventory_hostname }}"
+      become: no
