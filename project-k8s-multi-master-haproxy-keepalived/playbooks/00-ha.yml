@@ -11,9 +11,17 @@
     virtual_router_id: "51"
     keepalived_auth_enabled: true  # Set false to disable authentication
     keepalived_password: "123456"
-    network_interface: "ens33"
 
   tasks:
+
+    - name: Detect network interface
+      shell: ip route | grep default | awk '{print $5}' | head -1
+      register: detected_interface
+      changed_when: false
+
+    - name: Set network interface variable
+      set_fact:
+        network_interface: "{{ detected_interface.stdout }}"
 
     - name: Install HAProxy and Keepalived
       apt:
@@ -57,11 +65,23 @@
         mode: '0644'
       notify: Restart Keepalived
 
+    - name: Validate Keepalived config
+      command: keepalived --config-test
+      register: keepalived_config_test
+      ignore_errors: yes
+      changed_when: false
+
+    - name: Show Keepalived config validation
+      debug:
+        var: keepalived_config_test
+      when: keepalived_config_test.rc != 0
+
     - name: Ensure Keepalived is enabled and started
       systemd:
         name: keepalived
         enabled: yes
         state: started
+      when: keepalived_config_test.rc == 0
 
 
 

@@ -1,0 +1,37 @@
+
+[masters]
+54.169.149.97
+52.221.184.165
+47.129.51.173
+
+[workers]   
+54.254.193.141
+47.129.30.45
+
+[ha]
+3.0.180.150
+; 54.251.73.255
+
+[masters:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[workers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[ha:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

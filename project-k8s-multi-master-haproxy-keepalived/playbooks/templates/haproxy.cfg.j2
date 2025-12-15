@@ -14,3 +14,11 @@ backend kubernetes-backend
     {% for host in groups['masters'] %}
     server master{{ loop.index }} {{ host }}:6443 check
     {% endfor %}
+
+# HAProxy Stats Page
+listen stats
+    bind *:8404
+    mode http
+    stats enable
+    stats uri /
+    stats refresh 5s

@@ -13,7 +13,7 @@
   hosts: masters[0]  # Only target first master
   become: yes
   vars:
-    haproxy_address: "192.168.10.141"
+    haproxy_address: "{{ groups['ha'][0] }}"
     pod_network_cidr: "10.10.0.0/16"
     calico_version: "v3.28.0"
   tasks:
@@ -23,10 +23,11 @@
     # Includes controlPlaneEndpoint for multi-master setup
     # Only runs if admin.conf doesn't exist (idempotency)
     - name: Step 1 - Initialize Kubernetes cluster with controlPlaneEndpoint
-      command: kubeadm init --pod-network-cidr={{ pod_network_cidr }} --control-plane-endpoint={{ haproxy_address }}:6443 --upload-certs
+      command: kubeadm init --pod-network-cidr={{ pod_network_cidr }} --control-plane-endpoint={{ haproxy_address }}:6443 --upload-certs  #--apiserver-advertise-address={{ ansible_host }}
       register: kubeadm_init_output
       args:
         creates: /etc/kubernetes/admin.conf
+      # timeout: 300
 
     # Step 2: Display the output from kubeadm init for debugging
     - name: Step 2 - Show kubeadm init output

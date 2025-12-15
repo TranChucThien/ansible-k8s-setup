@@ -253,6 +253,7 @@ sudo systemctl start kubelet
 ```
 
 #### Persistent Pods
+
 ```bash
 # Force delete stuck pods
 kubectl delete pods --all --force --grace-period=0
@@ -264,6 +265,7 @@ kubectl patch pod <pod-name> -p '{"metadata":{"finalizers":null}}'
 ## 📚 Best Practices
 
 ### Before Reset
+
 1. **Backup important data** from pods
 2. **Drain node gracefully** to migrate workloads
 3. **Document node configuration** for recreation

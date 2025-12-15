@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.141:6443 --token buoq60.llqp41efu6x76tw2 --discovery-token-ca-cert-hash sha256:8314f2e6a8895e720546da879fc81e5961ba23a03faa450362b7900d92c03f6f --control-plane --certificate-key 9a7edd0f7f236b63860f95a465c46adfa838ce958ec248598cea3fd2af176b29
+kubeadm join 192.168.10.141:6443 --token xuil31.by1zpbxkguxstlke --discovery-token-ca-cert-hash sha256:9d2ed3b9866ba755dbfd139fc6c10b77f3599365d64338369fd76c2d69377c61 --control-plane --certificate-key 1bf676678309c7f8203c4717f48011abb3109e30a807398389474ee1ab89aee1

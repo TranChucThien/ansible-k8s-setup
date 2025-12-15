@@ -9,6 +9,15 @@
 
   tasks:
 
+    - name: Detect network interface
+      shell: ip route | grep default | awk '{print $5}' | head -1
+      register: detected_interface
+      changed_when: false
+
+    - name: Set network interface variable
+      set_fact:
+        network_interface: "{{ detected_interface.stdout }}"
+
     - name: Install HAProxy
       apt:
         name: haproxy
