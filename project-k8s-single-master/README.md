@@ -1,98 +1,47 @@
-# Kubernetes Single Master Cluster
+# Kubernetes Single-Master Cluster
 
-Deploy a simple Kubernetes cluster with single master node using Ansible.
+**Simple Kubernetes cluster deployment for development and testing environments.**
+
+Deploy a Kubernetes cluster with a single master node using Ansible automation. Perfect for development, testing, and learning.
 
 ## 🏗️ Architecture
 
 ```text
-┌─────────────────┐
-│   Master Node   │
-│ (Control Plane) │
-└────────┬────────┘
-         │
-┌────────▼────────┐
-│   Worker Node   │
-│   (Compute)     │
-└─────────────────┘
+┌─────────────────────────────────┐
+│         Master Node             │
+│    (Control Plane + etcd)       │
+│  • API Server                   │
+│  • Controller Manager           │
+│  • Scheduler                    │
+│  • etcd Database                │
+│  • Calico CNI                   │
+└────────────┬────────────────────┘
+              │ Kubernetes API
+              │
+    ┌─────────▼─────────┐
+    │   Worker Node 1   │
+    │    (Compute)      │
+    │  • kubelet        │
+    │  • kube-proxy     │
+    │  • containerd     │
+    └───────────────────┘
 ```
 
-## 📁 Files Structure
+## 🚀 Quick Start
 
-```text
-project-k8s-single-master/
-├── playbooks/
-│   ├── 01-common.yaml         # Common setup for all nodes
-│   ├── 02-master.yaml         # Master node initialization
-│   ├── 03-worker.yaml         # Worker nodes join cluster
-│   ├── clean-worker.yml       # Reset K8s configuration (all nodes)
-│   ├── site.yml               # Main deployment playbook
-│   └── logs/                  # Execution logs with timestamps
-├── troubleshooting/           # Issue diagnosis and solutions
-│   ├── common/                # Common deployment issues
-│   ├── master/                # Master node specific issues
-│   ├── worker/                # Worker node specific issues
-│   ├── network/               # Network and CNI issues
-│   └── README.md              # Troubleshooting guide
-├── inventory                  # Cloud environment inventory
-├── inventory-lab              # Lab environment inventory
-├── ansible.cfg                # Ansible configuration with logging
-├── run-clean.sh               # Script for cleanup with logging
-└── README.md                  # This file
-```
-
-## 🚀 Quick Deploy
-
+### Complete Cluster (Master + Workers)
 ```bash
-# Deploy complete cluster
+# Deploy complete cluster from scratch
 ansible-playbook -i inventory playbooks/site.yml
-
-# Or step by step
-ansible-playbook -i inventory playbooks/01-common.yaml   # All nodes setup
-ansible-playbook -i inventory playbooks/02-master.yaml   # Master init
-ansible-playbook -i inventory playbooks/03-worker.yaml   # Workers join
 ```
 
-## 🧹 Cleanup & Reset
-
+### Master Only (Development)
 ```bash
-# Reset all nodes (masters + workers)
-ansible-playbook -i inventory playbooks/clean-worker.yml
-
-# Or use script with logging
-./run-clean.sh
+# Deploy only master node for development
+ansible-playbook -i inventory playbooks/site-master-only.yml
 ```
 
-## 📋 Inventory Examples
-
-### Cloud (AWS/EC2)
-```ini
-[masters]
-47.129.50.197
-
-[workers]
-18.142.245.203
-
-[masters:vars]
-ansible_user=ubuntu
-ansible_ssh_private_key_file=ansible-key.pem
-```
-
-### Lab Environment
-```ini
-[masters]
-192.168.10.138
-
-[workers]
-192.168.10.142
-
-[masters:vars]
-ansible_user=master
-ansible_ssh_pass=1
-ansible_become_pass=1
-```
-
-## ✅ Verification
-
+### Verify Installation
 ```bash
 # Check cluster status
 kubectl get nodes
@@ -103,20 +52,133 @@ k8s-master-1   Ready    control-plane   5m    v1.33.x
 k8s-worker-1   Ready    <none>          3m    v1.33.x
 ```
 
+## 📁 Project Structure
+
+```text
+project-k8s-single-master/
+├── playbooks/
+│   ├── 01-setup-common.yaml         # Base setup (Docker, K8s packages)
+│   ├── 02-setup-master.yaml         # Master initialization + Calico
+│   ├── 03-setup-worker.yaml         # Workers join cluster
+│   ├── 04-setup-add-worker.yaml     # Add new workers
+│   ├── 11-maintenance-reset-node.yml# Reset cluster
+│   ├── 21-backup-etcd.yml           # Backup operations
+│   ├── 22-backup-setup-cron.yml     # Automated backup
+│   ├── 23-backup-remove-cron.yml    # Remove backup
+│   ├── 24-backup-etcd-restore.yml   # Restore from backup
+│   ├── site.yml                     # 🎯 Complete cluster deployment
+│   └── site-master-only.yml         # 🏠 Master-only deployment
+├── troubleshooting/                 # Issue diagnosis guides
+├── backups/                         # Local backup storage
+├── logs/                           # Execution logs
+├── inventory                       # Server inventory file
+├── ansible.cfg                     # Ansible configuration
+└── README.md                       # This documentation
+```
+
+## 🎯 Deployment Options
+
+### Option 1: Complete Cluster
+**Use case:** Production-like environment with master and workers
+
+```bash
+ansible-playbook -i inventory playbooks/site.yml
+```
+
+**What happens:**
+1. ✅ Installs Docker and Kubernetes on all nodes
+2. ✅ Initializes master with kubeadm
+3. ✅ Installs Calico CNI networking
+4. ✅ Joins all worker nodes to cluster
+5. ✅ Configures kubectl access
+
+### Option 2: Master-Only
+**Use case:** Development/testing with single node
+
+```bash
+ansible-playbook -i inventory playbooks/site-master-only.yml
+```
+
+**What happens:**
+1. ✅ Sets up master node only
+2. ✅ Master can schedule pods (no workers needed)
+3. ✅ Perfect for learning and development
+
+### Manual Step-by-Step
+```bash
+# Step 1: Prepare all nodes
+ansible-playbook -i inventory playbooks/01-setup-common.yaml
+
+# Step 2: Initialize master
+ansible-playbook -i inventory playbooks/02-setup-master.yaml
+
+# Step 3: Join workers (optional)
+ansible-playbook -i inventory playbooks/03-setup-worker.yaml
+```
+
+## 📋 Inventory Configuration
+
+### Cloud Environment (AWS/GCP/Azure)
+```ini
+# inventory
+[masters]
+47.129.50.197
+
+[workers]
+18.142.245.203
+
+[masters:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+
+[workers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+```
+
+### Lab Environment (Local VMs)
+```ini
+# inventory-lab
+[masters]
+192.168.10.138
+
+[workers]
+192.168.10.142
+
+[masters:vars]
+ansible_user=master
+ansible_ssh_pass=password123
+ansible_become_pass=password123
+
+[workers:vars]
+ansible_user=worker
+ansible_ssh_pass=password123
+ansible_become_pass=password123
+```
+
+## ✅ Validation
+
+```bash
+# Test connectivity
+ansible all -i inventory -m ping
+
+# Validate playbook syntax
+ansible-playbook --syntax-check -i inventory playbooks/site.yml
+
+# Deploy cluster
+ansible-playbook -i inventory playbooks/site.yml
+
+# Check cluster status
+kubectl get nodes
+```
+
 ## 🔧 Configuration
 
-- **Pod Network**: 10.10.0.0/16
-- **CNI**: Calico v3.28.0
+- **OS**: Ubuntu 24.04 LTS
 - **Kubernetes**: v1.33.x
 - **Container Runtime**: containerd
-- **Logging**: Enabled with timestamps
-
-## 📊 Logging
-
-All playbook executions are automatically logged:
-- Main logs: `logs/ansible.log`
-- Cleanup logs: `logs/k8s-reset-[timestamp].log`
-- Deprecation warnings: Disabled
+- **CNI Plugin**: Calico v3.28.0
+- **Pod Network CIDR**: 10.10.0.0/16
 
 ## ⚠️ Limitations
 
@@ -128,7 +190,6 @@ For production, use [Multi-Master HA setup](../project-k8s-multi-master-haproxy/
 
 ## 🔗 Related
 
-- [Troubleshooting Guide](troubleshooting/README.md) - Issue diagnosis and solutions
+- [Troubleshooting Guide](troubleshooting/README.md)
 - [Multi-Master HA](../project-k8s-multi-master-haproxy/README.md)
 - [Multi-Master + Keepalived](../project-k8s-multi-master-haproxy-keepalived/README.md)
-- [General Troubleshooting](../docs/troubleshooting.md)

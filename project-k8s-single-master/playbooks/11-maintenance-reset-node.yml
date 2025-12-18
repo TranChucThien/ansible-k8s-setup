@@ -32,7 +32,8 @@
       
     - name: Reset kubeadm
       shell: kubeadm reset -f
-      ignore_errors: yes
+      # ignore_errors: yes
+      become: yes
 
     - name: Remove Kubernetes configuration directory
       file:

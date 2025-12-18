@@ -16,6 +16,8 @@ playbooks/
 │   ├── 01-etcd-backup.yml     # etcd backup
 │   ├── 02-setup-cron.yml      # Setup backup cron job
 │   ├── 03-remove-cron.yml     # Remove backup cron job
+│   ├── 04-etcd-restore.yml    # etcd restore
+│   ├── TEST-SCENARIO.md       # Test scenario guide
 │   └── inventory              # Backup-specific inventory
 └── join-command.txt           # Worker join command
 ```
@@ -53,6 +55,9 @@ ansible-playbook playbooks/03-backup/02-setup-cron.yml
 
 # Remove automated backup
 ansible-playbook playbooks/03-backup/03-remove-cron.yml
+
+# Restore from backup
+ansible-playbook -i inventory playbooks/03-backup/04-etcd-restore.yml -e backup_file=/path/to/backup.tar.gz
 ```
 
 ### Maintenance

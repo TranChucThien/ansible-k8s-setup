@@ -1,0 +1,126 @@
+# =============================================================================
+# etcd Restore Playbook
+# =============================================================================
+# Purpose: Restore etcd and Kubernetes configurations from backup
+# Usage: ansible-playbook -i inventory playbooks/03-backup/04-etcd-restore.yml -e backup_file=/path/to/backup.tar.gz
+# =============================================================================
+
+---
+- name: Restore etcd and Kubernetes configurations
+  hosts: masters[0]
+  become: yes
+  vars:
+    etcd_data_dir: "/var/lib/etcd"
+    k8s_manifests_path: "/etc/kubernetes/manifests"
+
+  tasks:
+
+### Task on localhost to prepare restore files
+    - name: Check if backup file is provided
+      fail:
+        msg: "Please provide backup_file variable: -e backup_file=/path/to/backup.tar.gz"
+      when: backup_file is not defined
+
+    - name: Check if backup file exists
+      stat:
+        path: "{{ backup_file }}"
+      register: backup_stat
+      delegate_to: localhost
+      become: no
+
+    - name: Fail if backup file not found
+      fail:
+        msg: "Backup file {{ backup_file }} not found"
+      when: not backup_stat.stat.exists
+
+    - name: Create restore directory on localhost
+      file:
+        path: "/tmp/k8s-restore"
+        state: directory
+        mode: '0755'
+      delegate_to: localhost
+      become: no
+
+    - name: Extract backup file at localhost
+      unarchive:
+        src: "{{ backup_file }}"
+        dest: "/tmp/k8s-restore/"
+        remote_src: no
+      delegate_to: localhost
+      become: no
+
+    - name: Clean existing etcd restore directory
+      file:
+        path: "/tmp/etcd-restore"
+        state: absent
+      delegate_to: localhost
+      become: no
+
+    - name: Etcd restore at localhost
+      shell: |
+        etcdutl snapshot restore /tmp/k8s-restore/*/etcd/snapshot.db \
+          --data-dir=/tmp/etcd-restore 
+      become: no
+
+
+### Tasks on master to perform restore
+    - name: Copy restored etcd data from localhost
+      copy:
+        src: "/tmp/etcd-restore/"
+        dest: "/tmp/etcd-restore/"
+        mode: preserve
+      delegate_to: localhost
+      become: no
+    
+    - name: Check if manifests directory exists
+      stat:
+        path: "{{ k8s_manifests_path }}"
+      register: manifests_stat
+
+    - name: Disable controlplan components using move manifests to temp
+      shell: |
+        mkdir -p /tmp/k8s-manifests-backup
+        if [ -d "{{ k8s_manifests_path }}" ]; then
+          mv {{ k8s_manifests_path }}/* /tmp/k8s-manifests-backup/ 2>/dev/null || true
+        fi
+      become: yes
+
+    - name: Backup old etcd data directory
+      shell: |
+        if [ -d "{{ etcd_data_dir }}" ]; then
+          rm -rf {{ etcd_data_dir }}.backup.* 2>/dev/null || true
+          mv {{ etcd_data_dir }} {{ etcd_data_dir }}.backup.{{ ansible_date_time.epoch }}
+        fi
+      become: yes
+
+    - name: Copy restored etcd data
+      copy:
+        src: "/tmp/etcd-restore/"
+        dest: "{{ etcd_data_dir }}/"
+        mode: preserve
+      become: yes
+
+    - name: Enable controlplan components by moving manifests back
+      shell: |
+        mv /tmp/k8s-manifests-backup/* {{ k8s_manifests_path }}/
+      become: yes
+
+    - name: Restart kubelet to pick up new etcd data
+      systemd:
+        name: kubelet
+        state: restarted
+      become: yes
+
+    - name: Restart containerd to ensure clean state
+      systemd:
+        name: containerd
+        state: restarted
+      become: yes
+
+    - name: Notify user to verify cluster status
+      debug:
+        msg:
+          - "Etcd restore process completed successfully!"
+          - "Please verify the cluster status using:"
+          - "   kubectl get nodes"
+          - "   kubectl get pods -A"

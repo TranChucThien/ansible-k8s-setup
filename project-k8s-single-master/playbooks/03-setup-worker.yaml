@@ -51,13 +51,15 @@
         path: /etc/kubernetes/kubelet.conf
       register: kubelet_conf_check
 
-    - name: Skip join if already joined
-      debug:
-        msg: "Node already joined cluster. Skipping join command."
-      when: kubelet_conf_check.stat.exists
+    # - name: Skip join if already joined
+    #   debug:
+    #     msg: "Node already joined cluster. Skipping join command."
+    #   when: kubelet_conf_check.stat.exists
 
     - name: Join worker to Kubernetes cluster
-      command: "{{ join_command }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-bootstrap-kubelet.conf,FileAvailable--etc-kubernetes-pki-ca.crt"
+      # command: "{{ join_command }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-bootstrap-kubelet.conf,FileAvailable--etc-kubernetes-pki-ca.crt"
+      command: "{{ join_command }}"
+
       register: join_result
       when: not kubelet_conf_check.stat.exists
       ignore_errors: yes
