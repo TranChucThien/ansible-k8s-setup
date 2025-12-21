@@ -40,24 +40,42 @@ ansible-k8s/
 │   │   ├── 02-cluster-init-master.yaml  # Initialize first master
 │   │   ├── 03-join-master.yaml    # Join additional masters
 │   │   ├── 03-join-worker.yaml    # Join worker nodes
+│   │   ├── 04-remove-master.yaml  # Remove master nodes
+│   │   ├── 05-remove-worker.yaml  # Remove worker nodes
+│   │   ├── 21-backup-etcd.yml     # Manual etcd backup
+│   │   ├── 22-backup-setup-cron.yml # Setup automated backup
+│   │   ├── 23-backup-remove-cron.yml # Remove backup cron
+│   │   ├── 24-restore-etcd-and-init.yml # Disaster recovery
+│   │   ├── 99-k8s-reset-node.yml  # Reset cluster nodes
 │   │   ├── haproxy.cfg.j2         # HAProxy configuration template
 │   │   └── site.yml               # Main playbook
-│   ├── inventory                  # Server inventory
+│   ├── inventory-lab              # Lab environment inventory
 │   └── README.md                  # HAProxy + Keepalived documentation
+│
+├── docs/                          # Comprehensive Documentation
+│   ├── setup-guides/              # Initial cluster setup
+│   │   ├── k8s-manual-installation.md
+│   │   ├── multi-master-setup-noha.md
+│   │   └── connect-cluster.md
+│   ├── operations/                # Day-to-day operations
+│   │   ├── node-management.md
+│   │   └── reset-nodes.md
+│   ├── operations-guide/          # Complete operations guide
+│   │   ├── operations-guide.md    # Vietnamese
+│   │   └── operations-guide-en.md # English
+│   ├── backup-restore/            # Data protection
+│   │   └── etcd-backup-restore/   # etcd backup & restore guide
+│   ├── troubleshooting/           # Common issues & solutions
+│   │   └── etcd-restore-troubleshooting.md
+│   ├── test-ha-cluster/           # HA testing procedures
+│   │   ├── test-ha-cluster.md     # Vietnamese
+│   │   └── test-ha-cluster-en.md  # English
+│   └── README.md                  # Documentation navigation
 │
 ├── project/                       # Work in progress (excluded from git)
 │   ├── groups_vars/
 │   ├── host_vars/
 │   └── roles/
-│
-├── docs/                          # Documentation
-│   ├── installation.md            # Manual installation guide
-│   ├── connect-cluster.md         # Cluster connection guide
-│   ├── troubleshooting.md         # Troubleshooting guide
-│   ├── node-management.md         # Node management guide
-│   ├── ha-setup.md                # HA setup guide
-│   ├── multi-master-setup.md      # Multi-master setup guide
-│   └── test-ha-cluster.md         # HA cluster testing guide
 │
 ├── .gitignore                     # Git ignore rules
 ├── CHANGELOG.md                   # Version history
@@ -143,21 +161,35 @@ ansible-playbook -i inventory playbooks/site.yml --check
 
 ## 📚 Documentation
 
-### Setup Guides
+### 🚀 [Setup Guides](docs/setup-guides/)
+- **[Manual Installation Guide](docs/setup-guides/k8s-manual-installation.md)** - Step-by-step manual setup
+- **[Multi-Master Setup (No HA)](docs/setup-guides/multi-master-setup-noha.md)** - Basic multi-master configuration
+- **[Cluster Connection Guide](docs/setup-guides/connect-cluster.md)** - Connect to your cluster
+
+### 🔄 [Operations](docs/operations/)
+- **[Operations Guide](docs/operations-guide/)** - Complete operations documentation (EN/VI)
+- **[Node Management](docs/operations/node-management.md)** - Add/remove nodes
+- **[Reset Nodes](docs/operations/reset-nodes.md)** - Clean node reset procedures
+
+### 💾 [Backup & Restore](docs/backup-restore/)
+- **[etcd Backup & Restore Guide](docs/backup-restore/etcd-backup-restore/)** - Complete backup/restore procedures
+- Automated backup strategies
+- Disaster recovery procedures
+
+### 🔧 [Troubleshooting](docs/troubleshooting/)
+- **[etcd Restore Troubleshooting](docs/troubleshooting/etcd-restore-troubleshooting.md)** - Fix restore issues
+- Common cluster problems
+- Emergency recovery procedures
+
+### 🧪 [HA Testing](docs/test-ha-cluster/)
+- **[HA Cluster Testing Guide](docs/test-ha-cluster/)** - Comprehensive HA testing (EN/VI)
+- Failure scenarios and recovery
+- Performance validation
+
+### Project-Specific Documentation
 - **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster setup
 - **[Multi-Master with HAProxy](project-k8s-multi-master-haproxy/README.md)** - HA cluster with HAProxy
 - **[Multi-Master with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/README.md)** - Full HA with VIP failover
-
-### General Guides
-- [Manual Installation Guide](docs/installation.md) - Step-by-step manual setup
-- [Cluster Connection Guide](docs/connect-cluster.md) - Connect to your cluster
-- [Node Management Guide](docs/node-management.md) - Add/remove nodes
-- [Troubleshooting Guide](docs/troubleshooting.md) - Common issues and fixes
-
-### High Availability Guides
-- [HA Setup Guide](docs/ha-setup.md) - HA architecture overview
-- [Multi-Master Setup Guide](docs/multi-master-setup.md) - Detailed HA setup
-- [Test HA Cluster Guide](docs/test-ha-cluster.md) - Verify HA functionality
 
 ## 🔧 Requirements
 
@@ -172,7 +204,9 @@ ansible-playbook -i inventory playbooks/site.yml --check
 - **Container Runtime**: containerd
 - **Kubernetes**: v1.33.x
 - **CNI Plugin**: Calico v3.28.0
-- **Load Balancer** (HA only): HAProxy
+- **Load Balancer** (HA only): HAProxy + Keepalived
+- **Backup Tools**: etcdctl, etcdutl
+- **Monitoring**: HAProxy stats page
 
 ## 🔄 Release Process
 
