@@ -1,6 +1,6 @@
 ---
 - name: Create join command for worker nodes
-  hosts: masters
+  hosts: masters[0]
   become: yes
   tasks:
     # Step 5: Generate the kubeadm join command for worker nodes
@@ -16,7 +16,7 @@
 
 
 - name: Join worker nodes to Kubernetes cluster
-  hosts: workers
+  hosts: workers:new_workers
   become: yes
   tasks:
 

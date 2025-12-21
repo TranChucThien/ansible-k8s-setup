@@ -1,0 +1,168 @@
+# =============================================================================
+# etcd Backup Playbook
+# =============================================================================
+# Purpose: Create comprehensive backup of etcd and Kubernetes configurations
+# Usage: ansible-playbook -i inventory playbooks/backup/etcd-backup.yml
+# =============================================================================
+
+---
+- name: Backup etcd and Kubernetes configurations
+  hosts: masters[0]
+  become: yes
+  vars:
+    backup_base_dir: "/backups"
+    backup_dir: "{{ backup_base_dir }}/k8s-{{ ansible_date_time.date }}"
+    local_backup_base_dir: "../../backups"
+    local_backup_dir: "{{ local_backup_base_dir }}/k8s-{{ ansible_date_time.date }}"
+    etcd_snapshot_path: "/var/lib/etcd/etcd-snapshot.db"
+    kubeconfig_path: "/home/{{ ansible_user }}/.kube/config"
+    etcd_pki_path: "/etc/kubernetes/pki/etcd"
+    k8s_pki_path: "/etc/kubernetes/pki"
+    k8s_manifests_path: "/etc/kubernetes/manifests"
+    etcd_endpoints: "https://127.0.0.1:2379"
+    retention_days: 7
+
+  tasks:
+    - name: Create backup directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0755'
+      loop:
+        - "{{ backup_dir }}"
+        - "{{ backup_dir }}/etcd"
+        - "{{ backup_dir }}/pki"
+        - "{{ backup_dir }}/kubeconfig"
+        - "{{ backup_dir }}/manifests"
+
+    - name: Get etcd pod name
+      shell: kubectl get pods -n kube-system -l component=etcd -o jsonpath='{.items[0].metadata.name}' -n kube-system
+      register: etcd_pod_result
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Set etcd pod name
+      set_fact:
+        etcd_pod: "{{ etcd_pod_result.stdout }}"
+
+    - name: Check etcd health before backup
+      shell: |
+        kubectl exec -n kube-system {{ etcd_pod }} -- etcdctl \
+        --endpoints={{ etcd_endpoints }} \
+        --cacert={{ etcd_pki_path }}/ca.crt \
+        --cert={{ etcd_pki_path }}/server.crt \
+        --key={{ etcd_pki_path }}/server.key \
+        endpoint health
+      register: etcd_health
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      failed_when: "'healthy' not in etcd_health.stdout"
+
+    - name: Create etcd snapshot in pod
+      shell: kubectl exec -n kube-system {{ etcd_pod }} -- etcdctl --endpoints={{ etcd_endpoints }} --cacert={{ etcd_pki_path }}/ca.crt --cert={{ etcd_pki_path }}/server.crt --key={{ etcd_pki_path }}/server.key snapshot save {{ etcd_snapshot_path }}
+      register: etcd_backup
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Check if etcd snapshot exists
+      stat:
+        path: "{{ etcd_snapshot_path }}"
+      register: snapshot_stat
+
+    - name: Copy snapshot to etcd directory
+      copy:
+        src: "{{ etcd_snapshot_path }}"
+        dest: "{{ backup_dir }}/etcd/snapshot.db"
+        remote_src: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+      when: snapshot_stat.stat.exists
+
+    - name: Verify etcd backup
+      shell: |
+        kubectl exec -n kube-system {{ etcd_pod }} -- etcdctl \
+        snapshot status {{ etcd_snapshot_path }} --write-out=table
+      register: backup_status
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+
+    - name: Display etcd backup verification
+      debug:
+        msg: "{{ backup_status.stdout_lines }}"
+
+
+    - name: Backup Kubernetes PKI certificates
+      copy:
+        src: "{{ k8s_pki_path }}/"
+        dest: "{{ backup_dir }}/pki/"
+        remote_src: yes
+        mode: preserve
+
+    - name: Change PKI ownership
+      file:
+        path: "{{ backup_dir }}/pki"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
+
+    - name: Backup Kubernetes manifests
+      copy:
+        src: "{{ k8s_manifests_path }}/"
+        dest: "{{ backup_dir }}/manifests/"
+        remote_src: yes
+        mode: preserve
+
+    - name: Change manifests ownership
+      file:
+        path: "{{ backup_dir }}/manifests"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        recurse: yes
+
+    - name: Backup kubeconfig
+      copy:
+        src: "{{ kubeconfig_path }}"
+        dest: "{{ backup_dir }}/kubeconfig/config"
+        remote_src: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Backup kubeadm config
+      shell: kubectl get cm kubeadm-config -n kube-system -o yaml
+      register: kubeadm_config
+      environment:
+        KUBECONFIG: "{{ kubeconfig_path }}"
+      ignore_errors: yes
+
+    - name: Save kubeadm config to file
+      copy:
+        content: "{{ kubeadm_config.stdout }}"
+        dest: "{{ backup_dir }}/kubeadm-config.yaml"
+      when: kubeadm_config.rc == 0
+
+    - name: Create tar archive of backup
+      archive:
+        path: "{{ backup_dir }}"
+        dest: "{{ backup_base_dir }}/k8s-{{ ansible_date_time.date }}.tar.gz"
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Copy backup archive to local machine
+      fetch:
+        src: "{{ backup_base_dir }}/k8s-{{ ansible_date_time.date }}.tar.gz"
+        dest: "{{ local_backup_base_dir }}/"
+        flat: yes
+      become: no
+
+    - name: Get absolute path of local backup
+      shell: realpath {{ local_backup_base_dir }}/k8s-{{ ansible_date_time.date }}.tar.gz
+      register: local_absolute_path
+      delegate_to: localhost
+      become: no
+
+    - name: Display backup summary
+      debug:
+        msg: 
+          - "Backup completed!"
+          - "Remote archive: {{ backup_base_dir }}/k8s-{{ ansible_date_time.date }}.tar.gz"
+          - "Local archive: {{ local_absolute_path.stdout }}"

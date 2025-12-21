@@ -1,1 +1,1 @@
-kubeadm join 192.168.10.100:6443 --token ky586n.2e1natisfaotuxfm --discovery-token-ca-cert-hash sha256:00871096ea6d8e074c7c2078e8b9134715f831c032c01d8ea7bcc162a4bda5be --control-plane --certificate-key c00c7543017dd9cc10237ab5b0aeea9aa22f9cd4a8ab44decffb2b3db2f414f0
+kubeadm join 192.168.10.100:6443 --token 4uf0ro.s1w032swy8kkbmlg --discovery-token-ca-cert-hash sha256:5790efe1cc220b7ae89230aed873cdb15d418fb9bf8686bfea6d2d92d4de1a96 --control-plane --certificate-key 1226bba9b2105d31a9558678b1c9e70d07700bdf2f1066ea58647c5007cb7424

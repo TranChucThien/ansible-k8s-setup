@@ -24,7 +24,7 @@
 
 ---
 - name: Common setup for all Kubernetes nodes
-  hosts: masters:workers
+  hosts: masters:workers:new_masters:new_workers
   become: yes
   vars:
     master_prefix: "k8s-master"
@@ -213,3 +213,64 @@
       systemd:
         name: containerd
         state: restarted
+        
+    #######################################################
+    # Pre-Step: Build and install etcdctl from source
+    #######################################################
+- name: Build and install etcdctl from source
+  hosts: masters:new_masters
+  become: yes
+
+  tasks:
+    - name: Install build dependencies for etcdctl
+      apt:
+        name:
+          - git
+          - make
+          - gcc
+          - curl
+        state: present
+        update_cache: yes
+
+    - name: Install Go (required for building etcdctl)
+      unarchive:
+        src: https://go.dev/dl/go1.21.6.linux-amd64.tar.gz
+        dest: /usr/local
+        remote_src: yes
+        creates: /usr/local/go
+
+    - name: Add Go to system PATH
+      copy:
+        dest: /etc/profile.d/go.sh
+        content: |
+          export PATH=$PATH:/usr/local/go/bin
+        mode: "0644"
+
+    - name: Clone etcd source code
+      git:
+        repo: https://github.com/etcd-io/etcd.git
+        dest: /usr/local/src/etcd
+        version: v3.6.0
+        force: yes
+
+    - name: Build etcdctl from source
+      shell: |
+        export PATH=$PATH:/usr/local/go/bin
+        ./build
+      args:
+        chdir: /usr/local/src/etcd
+        creates: /usr/local/src/etcd/bin/etcdctl
+        executable: /bin/bash
+
+    - name: Install etcdctl binary
+      copy:
+        src: /usr/local/src/etcd/bin/etcdctl
+        dest: /usr/local/bin/etcdctl
+        mode: "0755"
+        remote_src: yes
+
+    - name: Verify etcdctl installation
+      command: etcdctl version
+      changed_when: false
+
+

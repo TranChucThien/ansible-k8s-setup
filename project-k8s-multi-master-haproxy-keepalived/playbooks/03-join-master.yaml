@@ -18,8 +18,9 @@
       become: no
 
 
+
 - name: Join worker nodes to Kubernetes cluster
-  hosts: masters[1:]
+  hosts: masters[1:]:new_masters
   become: yes
   tasks:
 

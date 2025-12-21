@@ -1,0 +1,44 @@
+---
+- name: Remove Master Node from Kubernetes Cluster
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Get first etcd pod name
+      shell: kubectl get pods -n kube-system -l component=etcd -o name | head -1 | cut -d'/' -f2
+      register: etcd_pod_result
+
+    - name: Get etcd member ID for target node
+      shell: |
+        kubectl exec -n kube-system {{ etcd_pod_result.stdout }} -- etcdctl \
+          --endpoints=https://127.0.0.1:2379 \
+          --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+          --cert=/etc/kubernetes/pki/etcd/server.crt \
+          --key=/etc/kubernetes/pki/etcd/server.key \
+          member list | grep {{ item }} | cut -d',' -f1
+      register: member_id_result
+      loop: "{{ groups['remove_masters'] }}"
+      when: groups['remove_masters'] is defined
+
+    - name: Remove member from etcd cluster
+      shell: |
+        kubectl exec -n kube-system {{ etcd_pod_result.stdout }} -- etcdctl \
+          --endpoints=https://127.0.0.1:2379 \
+          --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+          --cert=/etc/kubernetes/pki/etcd/server.crt \
+          --key=/etc/kubernetes/pki/etcd/server.key \
+          member remove {{ item.stdout }}
+      loop: "{{ member_id_result.results }}"
+      when: item.stdout != ""
+
+    - name: Get node name by IP
+      shell: kubectl get nodes -o wide | awk '$6=="{{ item }}"{print $1}'
+      register: node_name_result
+      loop: "{{ groups['remove_masters'] }}"
+      when: groups['remove_masters'] is defined
+
+    - name: Delete node from Kubernetes cluster
+      shell: kubectl delete node {{ item.stdout }}
+      loop: "{{ node_name_result.results }}"
+      when: item.stdout != ""
+      ignore_errors: true

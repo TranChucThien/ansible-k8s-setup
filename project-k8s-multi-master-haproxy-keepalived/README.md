@@ -67,6 +67,7 @@ project-k8s-multi-master-haproxy-keepalived/
 │   ├── 02-cluster-init-master.yaml  # Initialize first master
 │   ├── 03-join-master.yaml          # Join additional masters
 │   ├── 03-join-worker.yaml          # Join worker nodes
+│   ├── 24-restore-etcd-and-init.yml # etcd restore and cluster init
 │   └── site.yml                     # Main playbook (runs all)
 ├── inventory                        # Server inventory
 └── README.md                        # This file
@@ -202,6 +203,29 @@ ansible -i inventory ha -m shell -a "systemctl status keepalived"
 - **Master Priority**: 100 (192.168.10.141)
 - **Backup Priority**: 90 (192.168.10.143)
 - **Health Check**: HAProxy process monitoring
+
+## Disaster Recovery
+
+### etcd Restore and Cluster Reinit
+
+For disaster recovery scenarios where the entire cluster needs to be rebuilt:
+
+```bash
+# Restore etcd backup and reinitialize cluster
+ansible-playbook -i inventory playbooks/24-restore-etcd-and-init.yml --limit <master-node>
+
+# Example: Restore on first master node
+ansible-playbook -i inventory playbooks/24-restore-etcd-and-init.yml --limit 192.168.10.138
+```
+
+This playbook will:
+- Reset kubeadm configuration
+- Restore etcd snapshot (if backup file provided)
+- Initialize new cluster with restored data
+- Setup kubectl configuration
+- Display cluster status
+
+**Note**: This is for complete cluster rebuild scenarios only. See [Backup & Restore Documentation](../docs/backup-restore/) for detailed procedures.
 
 ## Troubleshooting
 

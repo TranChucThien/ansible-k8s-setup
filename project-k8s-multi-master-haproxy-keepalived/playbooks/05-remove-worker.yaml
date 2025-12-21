@@ -1,0 +1,23 @@
+---
+- name: Remove Worker Node from Kubernetes Cluster
+  hosts: localhost
+  gather_facts: false
+
+  tasks:
+    - name: Cordon worker nodes (prevent new pods)
+      shell: kubectl cordon {{ item }}
+      loop: "{{ groups['remove_workers'] }}"
+      when: groups['remove_workers'] is defined
+      ignore_errors: true
+
+    - name: Drain worker nodes (evict existing pods)
+      shell: kubectl drain {{ item }} --ignore-daemonsets --delete-emptydir-data --force
+      loop: "{{ groups['remove_workers'] }}"
+      when: groups['remove_workers'] is defined
+      ignore_errors: true
+
+    - name: Delete worker nodes from cluster
+      shell: kubectl delete node {{ item }}
+      loop: "{{ groups['remove_workers'] }}"
+      when: groups['remove_workers'] is defined
+      ignore_errors: true

@@ -1,0 +1,49 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: web-trace
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: web-trace
+  template:
+    metadata:
+      labels:
+        app: web-trace
+    spec:
+      containers:
+      - name: web
+        image: hashicorp/http-echo
+        args:
+        - "-text=pod=$(POD_NAME) node=$(NODE_NAME)"
+        env:
+        - name: POD_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: NODE_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: spec.nodeName
+        ports:
+        - containerPort: 5678
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 5678
+          initialDelaySeconds: 2
+          periodSeconds: 2
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: web-trace-svc
+spec:
+  type: NodePort
+  selector:
+    app: web-trace
+  ports:
+  - port: 80
+    targetPort: 5678
+    nodePort: 30967
