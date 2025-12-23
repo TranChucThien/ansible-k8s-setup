@@ -1,0 +1,24 @@
+# Inventory for cloud environment
+[masters]
+47.129.50.197
+13.215.207.103
+[workers]   
+18.142.245.203
+
+[masters:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[workers:vars]
+ansible_user=ubuntu
+ansible_ssh_private_key_file=ansible-key.pem
+ansible_become=yes
+ansible_become_method=sudo
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+

@@ -1,0 +1,3 @@
+# ETCD Backup Cron Job
+# Runs daily at {{ backup_time | default('02:00') }}
+{{ backup_time | default('0 2') }} * * * root ETCDCTL_API=3 etcdctl snapshot save {{ backup_dir }}/etcd-backup-$(date +\%Y\%m\%d-\%H\%M\%S).db --endpoints={{ etcd_endpoints }} --cacert={{ etcd_ca_file }} --cert={{ etcd_cert_file }} --key={{ etcd_key_file }} && find {{ backup_dir }} -name "etcd-backup-*.db" -mtime +{{ backup_retention_days | default(7) }} -delete

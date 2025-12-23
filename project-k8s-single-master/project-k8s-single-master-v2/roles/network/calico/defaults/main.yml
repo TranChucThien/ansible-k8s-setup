@@ -1,0 +1,4 @@
+---
+# Calico network plugin defaults
+calico_version: "v3.28.0"
+pod_network_cidr: "10.10.0.0/16"

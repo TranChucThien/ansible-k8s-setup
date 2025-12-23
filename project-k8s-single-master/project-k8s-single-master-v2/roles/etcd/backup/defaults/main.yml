@@ -1,0 +1,7 @@
+---
+# ETCD backup defaults
+backup_dir: "/opt/etcd-backup"
+etcd_endpoints: "https://127.0.0.1:2379"
+etcd_cert_file: "/etc/kubernetes/pki/etcd/server.crt"
+etcd_key_file: "/etc/kubernetes/pki/etcd/server.key"
+etcd_ca_file: "/etc/kubernetes/pki/etcd/ca.crt"

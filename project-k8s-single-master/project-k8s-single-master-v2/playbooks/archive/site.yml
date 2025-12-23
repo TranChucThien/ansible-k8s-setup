@@ -1,0 +1,29 @@
+# =============================================================================
+# Complete Kubernetes Single-Master Cluster Deployment
+# =============================================================================
+# Purpose: Deploy complete single-master Kubernetes cluster from scratch
+#
+# What this playbook does:
+# 1. Common setup for all nodes (Docker, Kubernetes packages, networking)
+# 2. Master node initialization with kubeadm and Calico CNI
+# 3. Worker nodes join to cluster automatically
+#
+# Requirements:
+# - Ubuntu 24.04 LTS nodes
+# - SSH access to all nodes
+# - Inventory file configured with [masters] and [workers] groups
+#
+# Usage:
+# ansible-playbook -i inventory playbooks/site.yml
+#
+# Expected result:
+# - Fully functional Kubernetes cluster
+# - Master node with control plane components
+# - Worker nodes joined and ready
+# - Calico networking configured
+# =============================================================================
+
+---
+- import_playbook: 01-setup-common.yaml
+- import_playbook: 02-setup-master.yaml
+- import_playbook: 03-setup-worker.yaml

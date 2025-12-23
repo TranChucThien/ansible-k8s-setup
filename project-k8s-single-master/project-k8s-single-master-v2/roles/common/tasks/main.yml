@@ -1,0 +1,70 @@
+---
+- name: Determine hostname based on group
+  set_fact:
+    my_hostname: >-
+      {% if 'k8s_masters' in group_names -%}
+      {{ master_prefix }}-{{ groups['k8s_masters'].index(inventory_hostname) + 1 }}
+      {%- elif 'k8s_workers' in group_names -%}
+      {{ worker_prefix }}-{{ groups['k8s_workers'].index(inventory_hostname) + 1 }}
+      {%- else -%}
+      {{ inventory_hostname }}
+      {%- endif %}
+
+- name: Update /etc/hosts for all nodes
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }} {{ hostvars[item].my_hostname | default(item) }}"
+    state: present
+  loop: "{{ groups['k8s_cluster'] }}"
+
+- name: Set hostname for this node
+  hostname:
+    name: "{{ my_hostname }}"
+
+- name: Disable swap immediately
+  command: swapoff -a
+
+- name: Ensure swap is disabled on boot
+  replace:
+    path: /etc/fstab
+    regexp: '^(.*\s+swap\s+.*)$'
+    replace: '# \1'
+
+- name: Load required kernel modules
+  modprobe:
+    name: "{{ item }}"
+    state: present
+  loop:
+    - br_netfilter
+    - overlay
+      
+- name: Ensure kernel modules are loaded on boot
+  copy:
+    dest: /etc/modules-load.d/k8s.conf
+    content: |
+      br_netfilter
+      overlay
+
+- name: Set sysctl params for Kubernetes networking
+  copy:
+    dest: /etc/sysctl.d/k8s.conf
+    content: |
+      net.bridge.bridge-nf-call-ip6tables = 1
+      net.bridge.bridge-nf-call-iptables = 1
+      net.ipv4.ip_forward = 1
+
+- name: Apply sysctl params without reboot
+  command: sysctl --system
+
+# Install etcdctl on master nodes only
+- name: Install etcdctl from package
+  apt:
+    name: etcd-client
+    state: present
+    update_cache: yes
+  when: "'k8s_masters' in group_names"
+
+- name: Verify etcdctl installation
+  command: etcdctl version
+  changed_when: false
+  when: "'k8s_masters' in group_names"

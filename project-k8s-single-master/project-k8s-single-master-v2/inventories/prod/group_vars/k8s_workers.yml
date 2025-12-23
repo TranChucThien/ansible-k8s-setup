@@ -1,0 +1,6 @@
+# Worker nodes configuration for production
+# ansible_user: <PRODUCTION_USER>
+# ansible_ssh_private_key_file: <PRODUCTION_KEY>
+
+# Worker-specific settings
+node_role: worker

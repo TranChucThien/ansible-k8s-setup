@@ -1,195 +1,66 @@
-# Kubernetes Ansible Setup
+# Kubernetes Ansible Deployment
 
-Deploy Kubernetes cluster on Ubuntu 24.04 using Ansible.
+Deploy Kubernetes clusters on Ubuntu 24.04 using Ansible with multiple architecture options.
 
 ## 🚀 Quick Links
 
-- **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster for dev/test
-- **[Multi-Master HA with HAProxy](project-k8s-multi-master-haproxy/README.md)** - HA cluster with HAProxy
-- **[Multi-Master HA with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/README.md)** - Full HA with VIP failover
+- **[Single Master](project-k8s-single-master/)** - Simple cluster for dev/test/learning
+- **[Multi-Master HA with HAProxy](project-k8s-multi-master-haproxy/)** - HA cluster with HAProxy
+- **[Multi-Master HA with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/)** - Full HA with VIP failover
 
-## 📁 Directory Structure
+## 📁 Repository Structure
 
 ```
 ansible-k8s/
-├── project-k8s-single-master/     # Single master cluster (Simple)
-│   ├── playbooks/
-│   │   ├── 01-common.yaml         # Common setup for all nodes
-│   │   ├── 02-master.yaml         # Master node setup
-│   │   ├── 03-worker.yaml         # Worker nodes setup
-│   │   └── site.yml               # Main playbook
-│   ├── inventory                  # Server inventory
-│   └── README.md                  # Single master documentation
-│
-├── project-k8s-multi-master-haproxy/  # Multi-master HA with HAProxy
-│   ├── playbooks/
-│   │   ├── 00-ha.yml              # Setup HAProxy load balancer
-│   │   ├── 01-common.yaml         # Common setup for all nodes
-│   │   ├── 02-cluster-init-master.yaml  # Initialize first master
-│   │   ├── 03-join-master.yaml    # Join additional masters
-│   │   ├── 03-join-worker.yaml    # Join worker nodes
-│   │   ├── haproxy.cfg.j2         # HAProxy configuration template
-│   │   └── site.yml               # Main playbook
-│   ├── inventory                  # Server inventory
-│   └── README.md                  # HAProxy setup documentation
-│
-├── project-k8s-multi-master-haproxy-keepalived/  # Full HA with VIP
-│   ├── playbooks/
-│   │   ├── 00-ha.yml              # Setup HAProxy + Keepalived
-│   │   ├── 01-common.yaml         # Common setup for all nodes
-│   │   ├── 02-cluster-init-master.yaml  # Initialize first master
-│   │   ├── 03-join-master.yaml    # Join additional masters
-│   │   ├── 03-join-worker.yaml    # Join worker nodes
-│   │   ├── 04-remove-master.yaml  # Remove master nodes
-│   │   ├── 05-remove-worker.yaml  # Remove worker nodes
-│   │   ├── 21-backup-etcd.yml     # Manual etcd backup
-│   │   ├── 22-backup-setup-cron.yml # Setup automated backup
-│   │   ├── 23-backup-remove-cron.yml # Remove backup cron
-│   │   ├── 24-restore-etcd-and-init.yml # Disaster recovery
-│   │   ├── 99-k8s-reset-node.yml  # Reset cluster nodes
-│   │   ├── haproxy.cfg.j2         # HAProxy configuration template
-│   │   └── site.yml               # Main playbook
-│   ├── inventory-lab              # Lab environment inventory
-│   └── README.md                  # HAProxy + Keepalived documentation
-│
-├── docs/                          # Comprehensive Documentation
-│   ├── setup-guides/              # Initial cluster setup
-│   │   ├── k8s-manual-installation.md
-│   │   ├── multi-master-setup-noha.md
-│   │   └── connect-cluster.md
-│   ├── operations/                # Day-to-day operations
-│   │   ├── node-management.md
-│   │   └── reset-nodes.md
-│   ├── operations-guide/          # Complete operations guide
-│   │   ├── operations-guide.md    # Vietnamese
-│   │   └── operations-guide-en.md # English
-│   ├── backup-restore/            # Data protection
-│   │   └── etcd-backup-restore/   # etcd backup & restore guide
-│   ├── troubleshooting/           # Common issues & solutions
-│   │   └── etcd-restore-troubleshooting.md
-│   ├── test-ha-cluster/           # HA testing procedures
-│   │   ├── test-ha-cluster.md     # Vietnamese
-│   │   └── test-ha-cluster-en.md  # English
-│   └── README.md                  # Documentation navigation
-│
-├── project/                       # Work in progress (excluded from git)
-│   ├── groups_vars/
-│   ├── host_vars/
-│   └── roles/
-│
-├── .gitignore                     # Git ignore rules
-├── CHANGELOG.md                   # Version history
-└── README.md                      # This file
+├── project-k8s-single-master/           # Single master deployments
+│   ├── project-k8s-single-master/      # Basic playbook approach
+│   └── project-k8s-single-master-v2/   # Advanced roles approach
+├── project-k8s-multi-master-haproxy/   # Multi-master with HAProxy
+├── project-k8s-multi-master-haproxy-keepalived/  # Full HA setup
+├── docs/                               # Documentation
+│   ├── setup-guides/
+│   ├── operations/
+│   ├── backup-restore/
+│   └── troubleshooting/
+├── backups/                            # Cluster backups
+└── README.md                           # This file
 ```
 
-## 🎯 Which Setup Should I Use?
+## 🎯 Choose Your Deployment
 
-| Feature | Single Master | Multi-Master + HAProxy | Multi-Master + HAProxy + Keepalived |
-|---------|--------------|------------------------|-------------------------------------|
-| **Use Case** | Dev/Test | Production | Mission-Critical Production |
-| **High Availability** | ❌ No | ✅ Yes | ✅✅ Full HA |
-| **Master Nodes** | 1 | 3+ | 3+ |
-| **Load Balancer** | Not needed | HAProxy (1 node) | HAProxy (2+ nodes) |
-| **VIP Failover** | ❌ No | ❌ No | ✅ Yes (Keepalived) |
-| **Complexity** | Simple | Moderate | Advanced |
-| **Cost** | Lower | Medium | Higher |
-| **Downtime Risk** | High | Low | Very Low |
-| **SPOF** | Master node | HAProxy node | None |
+### 🔰 **Beginners** - Start Here
+**[project-k8s-single-master/project-k8s-single-master/](project-k8s-single-master/project-k8s-single-master/)**
+- Simple playbook structure
+- Easy to understand and modify
+- Perfect for learning Ansible + Kubernetes
+
+### 🏗️ **Advanced** - Production Ready
+**[project-k8s-single-master/project-k8s-single-master-v2/](project-k8s-single-master/project-k8s-single-master-v2/)**
+- Ansible roles architecture
+- Multi-environment support
+- Production best practices
+
+### 🚀 **High Availability** - Enterprise
+**[project-k8s-multi-master-haproxy-keepalived/](project-k8s-multi-master-haproxy-keepalived/)**
+- Multiple master nodes
+- Load balancer with failover
+- Zero downtime deployments
 
 ## ⚡ Quick Start
 
-### Option 1: Single Master (Simple)
-
-**Best for**: Development, testing, learning
-
 ```bash
-cd project-k8s-single-master
-ansible-playbook -i inventory playbooks/site.yml
+# Clone repository
+git clone <repository-url>
+cd ansible-k8s
+
+# Choose your deployment type
+cd project-k8s-single-master/project-k8s-single-master/  # Beginner
+# OR
+cd project-k8s-single-master/project-k8s-single-master-v2/  # Advanced
+
+# Deploy cluster
+ansible-playbook -i inventory-lab playbooks/site.yml
 ```
-
-📖 **[Full Documentation](project-k8s-single-master/README.md)**
-
-### Option 2: Multi-Master with HAProxy
-
-**Best for**: Production with HA requirements
-
-```bash
-cd project-k8s-multi-master-haproxy
-ansible-playbook -i inventory playbooks/site.yml
-```
-
-📖 **[Full Documentation](project-k8s-multi-master-haproxy/README.md)**
-
-### Option 3: Multi-Master with HAProxy + Keepalived
-
-**Best for**: Mission-critical production with full HA and VIP failover
-
-```bash
-cd project-k8s-multi-master-haproxy-keepalived
-ansible-playbook -i inventory playbooks/site.yml
-```
-
-📖 **[Full Documentation](project-k8s-multi-master-haproxy-keepalived/README.md)**
-
-⚠️ **Security Notice**: This is a sample project. The inventory file may contain plaintext passwords and SSH keys for demonstration purposes. In production environments, use proper secret management, SSH key authentication, and Ansible Vault for sensitive data.
-
-## Security Considerations
-
-⚠️ **Important**: This repository contains sample configurations that prioritize simplicity over security:
-- Inventory file may contain plaintext credentials
-- SSH configurations are basic
-- No encryption for sensitive data
-
-For production use:
-- Use SSH key-based authentication
-- Implement Ansible Vault for secrets
-- Follow security best practices
-- Review and harden all configurations
-
-## ✅ Validation
-
-```bash
-# Check playbook syntax
-ansible-playbook --syntax-check -i inventory playbooks/site.yml
-
-# Test connection to servers
-ansible all -i inventory -m ping
-
-# Dry run (no actual changes)
-ansible-playbook -i inventory playbooks/site.yml --check
-```
-
-## 📚 Documentation
-
-### 🚀 [Setup Guides](docs/setup-guides/)
-- **[Manual Installation Guide](docs/setup-guides/k8s-manual-installation.md)** - Step-by-step manual setup
-- **[Multi-Master Setup (No HA)](docs/setup-guides/multi-master-setup-noha.md)** - Basic multi-master configuration
-- **[Cluster Connection Guide](docs/setup-guides/connect-cluster.md)** - Connect to your cluster
-
-### 🔄 [Operations](docs/operations/)
-- **[Operations Guide](docs/operations-guide/)** - Complete operations documentation (EN/VI)
-- **[Node Management](docs/operations/node-management.md)** - Add/remove nodes
-- **[Reset Nodes](docs/operations/reset-nodes.md)** - Clean node reset procedures
-
-### 💾 [Backup & Restore](docs/backup-restore/)
-- **[etcd Backup & Restore Guide](docs/backup-restore/etcd-backup-restore/)** - Complete backup/restore procedures
-- Automated backup strategies
-- Disaster recovery procedures
-
-### 🔧 [Troubleshooting](docs/troubleshooting/)
-- **[etcd Restore Troubleshooting](docs/troubleshooting/etcd-restore-troubleshooting.md)** - Fix restore issues
-- Common cluster problems
-- Emergency recovery procedures
-
-### 🧪 [HA Testing](docs/test-ha-cluster/)
-- **[HA Cluster Testing Guide](docs/test-ha-cluster/)** - Comprehensive HA testing (EN/VI)
-- Failure scenarios and recovery
-- Performance validation
-
-### Project-Specific Documentation
-- **[Single Master Setup](project-k8s-single-master/README.md)** - Simple cluster setup
-- **[Multi-Master with HAProxy](project-k8s-multi-master-haproxy/README.md)** - HA cluster with HAProxy
-- **[Multi-Master with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/README.md)** - Full HA with VIP failover
 
 ## 🔧 Requirements
 
@@ -206,46 +77,22 @@ ansible-playbook -i inventory playbooks/site.yml --check
 - **CNI Plugin**: Calico v3.28.0
 - **Load Balancer** (HA only): HAProxy + Keepalived
 - **Backup Tools**: etcdctl, etcdutl
-- **Monitoring**: HAProxy stats page
 
-## 🔄 Release Process
+## 📚 Documentation
 
-```bash
-# 1. Update CHANGELOG.md
+- **[Setup Guides](docs/setup-guides/)** - Installation and configuration
+- **[Operations Guide](docs/operations/)** - Day-to-day management
+- **[Backup & Restore](docs/backup-restore/)** - Data protection
+- **[Troubleshooting](docs/troubleshooting/)** - Common issues and solutions
 
-# 2. Commit and push
-git add .
-git commit -m "Release v1.0.0"
-git push origin main
+## 🔄 Version History
 
-# 3. Create tag
-git tag -a v1.0.0 -m "Release version 1.0.0"
-git push origin v1.0.0
-```
+See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
-See [CHANGELOG.md](CHANGELOG.md) for version history.
+## ⚠️ Security Notice
 
-## 📖 References
-
-### Official Documentation
-- [Kubernetes Official Documentation](https://kubernetes.io/vi/docs/setup/production-environment/tools/kubeadm/install-kubeadm/) - Installing kubeadm
-
-### Tutorials & Guides
-- [Install Kubernetes on Ubuntu - Cherry Servers](https://www.cherryservers.com/blog/install-kubernetes-ubuntu) - Comprehensive Ubuntu installation guide
-- [Creating HA Kubernetes Cluster with kubeadm and HAProxy](https://blog.devops.dev/creating-a-highly-available-kubernetes-cluster-with-kubeadm-and-haproxy-best-practices-and-8de9001197de) - Best practices for HA setup
-- [Achieving High Availability in Kubernetes Clusters](https://kubeops.net/blog/achieving-high-availability-in-kubernetes-clusters) - HA architecture and strategies
-
-### Advanced Topics
-- [Raft Algorithm & Backup etcd](https://ezyinfra.dev/blog/raft-algo-backup-etcd) - Understanding etcd consensus and backup strategies
-
-## Contributing
-
-Contributions are welcome! Please ensure:
-- Test all playbooks before submitting
-- Update documentation for new features
-- Follow existing code style
-- Add entries to CHANGELOG.md
-
-## License
-
-This project is provided as-is for educational and demonstration purposes.
+This repository contains sample configurations for demonstration purposes. For production use:
+- Use SSH key-based authentication
+- Implement Ansible Vault for secrets
+- Follow security best practices
+- Review and harden all configurations

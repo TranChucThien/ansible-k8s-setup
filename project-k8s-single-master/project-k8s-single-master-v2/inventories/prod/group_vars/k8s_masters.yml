@@ -1,0 +1,6 @@
+# Master nodes configuration for production
+# ansible_user: <PRODUCTION_USER>
+# ansible_ssh_private_key_file: <PRODUCTION_KEY>
+
+# Master-specific settings
+node_role: master

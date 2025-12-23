@@ -1,0 +1,7 @@
+# Worker nodes configuration
+ansible_user: worker
+ansible_ssh_pass: "1"
+ansible_become_pass: "1"
+
+# Worker-specific settings
+node_role: worker
