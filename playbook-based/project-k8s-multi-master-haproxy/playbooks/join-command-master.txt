@@ -1,0 +1,1 @@
+kubeadm join 192.168.10.141:6443 --token xuil31.by1zpbxkguxstlke --discovery-token-ca-cert-hash sha256:9d2ed3b9866ba755dbfd139fc6c10b77f3599365d64338369fd76c2d69377c61 --control-plane --certificate-key 1bf676678309c7f8203c4717f48011abb3109e30a807398389474ee1ab89aee1

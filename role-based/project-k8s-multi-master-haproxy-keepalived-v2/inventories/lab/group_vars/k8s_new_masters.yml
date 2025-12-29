@@ -1,0 +1,7 @@
+# Master nodes configuration
+ansible_user: master
+ansible_ssh_pass: "1"
+ansible_become_pass: "1"
+
+# Master-specific settings
+node_role: master

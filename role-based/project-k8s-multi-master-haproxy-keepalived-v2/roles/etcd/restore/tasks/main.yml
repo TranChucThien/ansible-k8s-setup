@@ -1,0 +1,111 @@
+---
+- name: Copy backup file to master (if backup_file_path is provided)
+  copy:
+    src: "{{ backup_file_path }}"
+    dest: /tmp/snapshot.db
+    mode: '0644'
+  when: backup_file_path is defined and backup_file_path != ""
+  ignore_errors: yes
+
+- name: Reset kubeadm
+  command: kubeadm reset --force
+  ignore_errors: yes
+
+- name: Remove old config directories
+  file:
+    path: "{{ item }}"
+    state: absent
+  loop:
+    - /etc/kubernetes
+    - /var/lib/kubelet
+    - /var/lib/etcd
+    - "{{ ansible_env.HOME }}/.kube"
+  ignore_errors: yes
+
+- name: Check existing workloads before restore
+  command: kubectl get all -A
+  register: existing_workloads
+  ignore_errors: yes
+  failed_when: false
+
+- name: Display existing workloads
+  debug:
+    msg: "{{ existing_workloads.stdout_lines }}"
+  when: existing_workloads.rc == 0
+
+- name: Restore etcd snapshot
+  command: |
+    etcdctl snapshot restore /tmp/snapshot.db \
+      --data-dir /var/lib/etcd \
+      --name {{ inventory_hostname }} \
+      --initial-cluster {{ inventory_hostname }}=https://{{ ansible_default_ipv4.address }}:2380 \
+      --initial-cluster-token {{ etcd_cluster_token }} \
+      --initial-advertise-peer-urls https://{{ ansible_default_ipv4.address }}:2380
+  when: backup_file_path is defined and backup_file_path != ""
+
+# - name: Restore etcd snapshot
+#   command: |
+#     etcdctl snapshot restore /tmp/snapshot.db \
+#       --data-dir /var/lib/etcd \
+
+  when: backup_file_path is defined and backup_file_path != ""
+
+- name: Start containerd service
+  systemd:
+    name: containerd
+    state: restarted
+    enabled: yes
+
+- name: Wait for containerd to be ready
+  pause:
+    seconds: 10
+
+- name: Initialize cluster with restored data
+  command: |
+    kubeadm init \
+      --pod-network-cidr={{ pod_network_cidr }} \
+      --control-plane-endpoint={{ control_plane_endpoint }} \
+      --upload-certs \
+      --ignore-preflight-errors=all
+  register: kubeadm_init
+      
+- name: Display kubeadm init output
+  debug:
+    msg: "{{ kubeadm_init.stdout_lines }}"
+
+- name: Create .kube directory
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+- name: Setup kubectl config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: yes
+    mode: '0644'
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+
+
+- name: Check cluster status after restore
+  command: kubectl get all -A
+  register: cluster_status
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  
+- name: Display cluster status
+  debug:
+    msg: "{{ cluster_status.stdout_lines }}"
+
+- name: Restart all deployments
+  shell: |
+    for ns in $(kubectl get ns -o jsonpath='{.items[*].metadata.name}'); do
+      kubectl get deploy -n $ns -o name | xargs -r kubectl rollout restart -n $ns
+    done
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  ignore_errors: yes

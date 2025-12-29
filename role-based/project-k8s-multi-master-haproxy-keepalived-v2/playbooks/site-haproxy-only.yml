@@ -1,0 +1,7 @@
+---
+# Deploy master nodes only
+- name: Setup HAProxy and Keepalived for HA
+  hosts: ha
+  become: yes
+  roles:
+    - haproxy_keepalived

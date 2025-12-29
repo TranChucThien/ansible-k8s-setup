@@ -1,0 +1,30 @@
+---
+- name: Reset kubeadm
+  command: kubeadm reset -f
+  
+
+- name: Remove .kube directory
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: absent
+
+- name: Remove /var/lib/etcd directory
+  file:
+    path: /var/lib/etcd
+    state: absent
+
+- name: Remove CNI configuration
+  file:
+    path: /etc/cni/net.d
+    state: absent
+
+- name: Remove iptables rules
+  shell: |
+    iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+  ignore_errors: yes
+
+- name: Restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+  

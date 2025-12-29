@@ -1,0 +1,76 @@
+---
+- name: Create backup directory on remote host
+  file:
+    path: "{{ etcd_backup_dir }}"
+    state: directory
+    mode: '0755'
+
+
+- name: Create etcd backup
+  shell: |
+    ETCDCTL_API=3 etcdctl snapshot save {{ etcd_backup_dir }}/etcd-backup-$(date +%Y-%m-%d-%H%M%S).db \
+    --endpoints=https://127.0.0.1:2379 \
+    --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+    --cert=/etc/kubernetes/pki/etcd/server.crt \
+    --key=/etc/kubernetes/pki/etcd/server.key
+  register: backup_result
+
+- name: Get actual backup filename
+  shell: ls -t {{ etcd_backup_dir }}/etcd-backup-*.db | head -1 | xargs basename
+  register: backup_filename_result
+  when: backup_result is succeeded
+
+- name: Set backup filename fact
+  set_fact:
+    backup_filename: "{{ backup_filename_result.stdout }}"
+  when: backup_result is succeeded
+
+- name: Create local backup directory
+  file:
+    path: "{{ local_backup_dir }}/{{ inventory_hostname }}"
+    state: directory
+    mode: '0755'
+  delegate_to: localhost
+  become: no
+  when: backup_result is succeeded
+
+- name: Fetch backup to control host
+  fetch:
+    src: "{{ etcd_backup_dir }}/{{ backup_filename }}"
+    dest: "{{ local_backup_dir }}/{{ inventory_hostname }}/"
+    flat: yes
+  when: backup_result is succeeded
+
+- name: Clean old backups on remote host
+  find:
+    paths: "{{ etcd_backup_dir }}"
+    age: "1d"
+    patterns: "etcd-backup-*.db"
+  register: old_backups
+  when: backup_result is succeeded
+
+- name: Remove old backups from remote host
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_backups.files | default([]) }}"
+  when: backup_result is succeeded
+
+- name: Clean old backups on control host
+  find:
+    paths: "{{ local_backup_dir }}/{{ inventory_hostname }}"
+    age: "{{ etcd_backup_retention_days }}d"
+    patterns: "etcd-backup-*.db"
+  register: local_old_backups
+  delegate_to: localhost
+  become: no
+  when: backup_result is succeeded
+
+- name: Remove old backups from control host
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ local_old_backups.files | default([]) }}"
+  delegate_to: localhost
+  become: no
+  when: backup_result is succeeded

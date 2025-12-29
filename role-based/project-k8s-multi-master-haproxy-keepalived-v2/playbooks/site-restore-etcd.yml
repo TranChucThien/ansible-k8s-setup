@@ -1,0 +1,12 @@
+---
+# ETCD Restore and Cluster Reinit
+# Use this playbook for disaster recovery scenarios
+
+- name: Restore ETCD and reinitialize cluster
+  hosts: new_cluster
+  become: yes
+  roles:
+    # - common
+    # - containerd
+    # - kubernetes/install
+    - etcd/restore

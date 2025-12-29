@@ -1,0 +1,72 @@
+# =============================================================================
+# Kubernetes Worker Nodes Setup Playbook
+# =============================================================================
+# Purpose: Join worker nodes to the Kubernetes cluster
+#
+# Steps performed:
+# 1. Generate join command from master node
+# 2. Save join command to local file
+# 3. Join worker nodes to cluster using the command
+#
+# Requirements:
+# - Master node must be initialized first (02-master.yaml)
+# - Worker nodes must have common setup completed (01-common.yaml)
+# =============================================================================
+
+---
+# Step 1: Generate join command from master
+- name: Create command to join worker nodes to the cluster
+  hosts: masters[0]
+  become: yes
+  tasks:
+
+    - name: Generate the kubeadm join command for worker nodes
+      shell: kubeadm token create --print-join-command
+      register: join_cmd
+
+    - name: Save the join command to a local file for later use
+      local_action: copy content="{{ join_cmd.stdout }}" dest="./join-command.txt"
+      run_once: true
+      become: no
+
+# Step 2: Join worker nodes to cluster      
+- name: Join worker nodes to Kubernetes cluster
+  hosts: workers
+  become: yes
+  tasks:
+
+    - name: Read join command from local file
+      local_action: slurp src=./join-command.txt
+      register: join_cmd_file
+      run_once: true
+      become: no
+
+    - name: Set join command variable
+      set_fact:
+        join_command: "{{ join_cmd_file.content | b64decode | trim }}"
+      run_once: true
+
+    - name: Check if node already joined cluster
+      stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_check
+
+    # - name: Skip join if already joined
+    #   debug:
+    #     msg: "Node already joined cluster. Skipping join command."
+    #   when: kubelet_conf_check.stat.exists
+
+    - name: Join worker to Kubernetes cluster
+      # command: "{{ join_command }} --ignore-preflight-errors=FileAvailable--etc-kubernetes-bootstrap-kubelet.conf,FileAvailable--etc-kubernetes-pki-ca.crt"
+      command: "{{ join_command }}"
+
+      register: join_result
+      when: not kubelet_conf_check.stat.exists
+      ignore_errors: yes
+
+    - name: Show join output
+      debug:
+        var: join_result
+      when: join_result is defined
+
+

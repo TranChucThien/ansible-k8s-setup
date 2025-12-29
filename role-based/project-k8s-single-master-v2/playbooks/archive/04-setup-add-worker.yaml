@@ -1,0 +1,39 @@
+# =============================================================================
+# Add New Worker Node Playbook
+# =============================================================================
+# Purpose: Add new worker node to existing cluster
+# Usage: ansible-playbook -i inventory playbooks/01-setup/04-add-worker.yaml --limit NEW_IP
+# =============================================================================
+
+---
+- name: Add new worker to cluster
+  hosts: workers
+  become: yes
+  tasks:
+    - name: Generate join command from master (bypass limit)
+      shell: kubeadm token create --print-join-command
+      register: join_cmd
+      delegate_to: "{{ groups['masters'][0] }}"
+      run_once: true
+
+    - name: Save join command to localhost
+      copy:
+        content: "{{ join_cmd.stdout }}"
+        dest: "./join-command.txt"
+      delegate_to: localhost
+      become: no
+      run_once: true
+
+    - name: Check if node already joined cluster
+      stat:
+        path: /etc/kubernetes/kubelet.conf
+      register: kubelet_conf_check
+
+    - name: Join worker to cluster
+      command: "{{ join_cmd.stdout }}"
+      register: join_result
+      when: not kubelet_conf_check.stat.exists
+
+    - name: Show join result
+      debug:
+        msg: "{{ join_result.stdout | default('Already joined') }}"

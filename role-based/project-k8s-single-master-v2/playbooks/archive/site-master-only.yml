@@ -1,0 +1,33 @@
+# =============================================================================
+# Master-Only Kubernetes Deployment
+# =============================================================================
+# Purpose: Deploy only master node without any worker nodes
+#
+# Use cases:
+# - Development/testing environments
+# - Single-node clusters
+# - Initial master setup before adding workers later
+# - Learning and experimentation
+#
+# What this playbook does:
+# 1. Common setup for master node (Docker, Kubernetes packages, networking)
+# 2. Master node initialization with kubeadm and Calico CNI
+# 3. Configures kubectl access for the ansible user
+#
+# Requirements:
+# - Ubuntu 24.04 LTS master node
+# - SSH access to master node
+# - Inventory file with [masters] group configured
+#
+# Usage:
+# ansible-playbook -i inventory playbooks/site-master-only.yml
+#
+# Expected result:
+# - Single-node Kubernetes cluster (master can schedule pods)
+# - kubectl configured and ready to use
+# - Calico networking installed
+# =============================================================================
+
+---
+- import_playbook: 01-setup-common.yaml
+- import_playbook: 02-setup-master.yaml

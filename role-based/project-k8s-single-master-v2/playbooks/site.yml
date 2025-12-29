@@ -1,0 +1,28 @@
+---
+# Complete Kubernetes cluster deployment using roles
+- name: Deploy complete Kubernetes cluster
+  hosts: k8s_cluster
+  become: yes
+  roles:
+    - common
+    - containerd
+    - kubernetes/install
+
+- name: Initialize master node
+  hosts: k8s_masters
+  become: yes
+  roles:
+    - kubernetes/master
+    - network/calico
+
+- name: Generate join command
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - kubernetes/join
+
+- name: Join worker nodes
+  hosts: k8s_workers
+  become: yes
+  roles:
+    - kubernetes/worker

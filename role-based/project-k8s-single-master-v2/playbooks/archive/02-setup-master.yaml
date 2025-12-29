@@ -1,0 +1,105 @@
+# =============================================================================
+# Kubernetes Master Node Setup Playbook
+# =============================================================================
+# Purpose: Setup Kubernetes master node with Calico networking
+#
+# Steps performed:
+# 1. Initialize Kubernetes cluster with specific pod network CIDR
+# 2. Configure kubectl access for ansible user
+# 3. Install and configure Calico CNI plugin
+# 4. Verify cluster status
+#
+# Requirements:
+# - 01-common.yaml playbook must be run first
+# - Node designated as master in inventory
+# =============================================================================
+
+---
+- name: Setup Kubernetes master with Calico network
+  hosts: masters
+  become: yes
+  tasks:
+
+    # Step 1: Initialize the Kubernetes cluster with kubeadm
+    # Uses 10.10.0.0/16 as the pod network CIDR
+    # Only runs if admin.conf doesn't exist (idempotency)
+    - name: Step 1 - Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr=10.10.0.0/16
+      register: kubeadm_init_output
+      args:
+        creates: /etc/kubernetes/admin.conf
+
+    # Step 2: Display the output from kubeadm init for debugging
+    - name: Step 2 - Show kubeadm init output
+      debug:
+        var: kubeadm_init_output.stdout
+
+    # Step 3: Create .kube directory for the ansible user to store kubectl config
+    - name: Step 3 - Create .kube directory for user
+      file:
+        path: "/home/{{ ansible_user }}/.kube"
+        state: directory
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0755'
+
+    # Step 4: Copy the kubectl admin config to user's home directory
+    - name: Step 4 - Copy admin.conf to user kube config
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "/home/{{ ansible_user }}/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+        mode: '0644'
+
+
+    # Step 5: Install Calico Network Plugin
+    # Check if Calico operator CRD exists
+    - name: Check if Calico operator CRD exists
+      command: kubectl get crd installations.operator.tigera.io
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      register: calico_operator_crd
+      failed_when: false
+      changed_when: false
+
+    # Only create operator if CRD does NOT exist
+    - name: Step 5a - Deploy Calico operator
+      command: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/tigera-operator.yaml
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      when: "'NotFound' in calico_operator_crd.stderr"
+    # Step 5b: Download the Calico custom resources manifest
+    - name: Step 5b - Download Calico custom-resources file
+      get_url:
+        url: https://raw.githubusercontent.com/projectcalico/calico/v3.28.0/manifests/custom-resources.yaml
+        dest: /tmp/custom-resources.yaml
+
+    # Step 5c: Update the CIDR in custom resources to match cluster pod CIDR
+    - name: Step 5c - Update CIDR in custom-resources.yaml
+      replace:
+        path: /tmp/custom-resources.yaml
+        regexp: 'cidr: 192\.168\.0\.0/16'
+        replace: 'cidr: 10.10.0.0/16'
+
+    # Step 5d: Apply the modified Calico custom resources
+    - name: Step 5d - Apply Calico custom resources
+      command: kubectl apply -f /tmp/custom-resources.yaml
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      ignore_errors: yes
+
+    # Step 6: Verify cluster node status
+    # Retries up to 5 times with 10 second delay
+    # Ensures at least the master node is in Ready state
+    - name: Step 6 - Wait for all nodes to be ready (at least master)
+      command: kubectl get nodes
+      register: nodes_status
+      environment:
+        KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+      retries: 5
+      delay: 10
+      until: "'Ready' in nodes_status.stdout"
+      check_mode: no
+

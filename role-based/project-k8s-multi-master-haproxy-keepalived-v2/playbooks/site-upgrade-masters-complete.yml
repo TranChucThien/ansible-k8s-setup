@@ -1,0 +1,60 @@
+---
+- name: Backup ETCD before upgrade
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - etcd/backup
+
+- name: Upgrade Kubernetes Masters
+  hosts: k8s_masters
+  become: yes
+  serial: 1
+  vars:
+    kubernetes_upgrade_version: "1.34"
+    kubernetes_target_version: "v1.34.3"
+    kubernetes_package_version: "1.34.*"
+  
+  pre_tasks:
+    - name: Display upgrade information
+      debug:
+        msg: |
+          Upgrading {{ inventory_hostname }}
+          Role: {{ 'First Master (upgrade apply)' if inventory_hostname == groups['k8s_masters'][0] else 'Additional Master (upgrade node)' }}
+          Target Version: {{ kubernetes_target_version }}
+
+  roles:
+    - kubernetes/upgrade_master
+
+  post_tasks:
+    - name: Include verification tasks
+      include_tasks: ../roles/kubernetes/upgrade_master/tasks/verify.yml
+      run_once: true
+      when: inventory_hostname == groups['k8s_masters'][-1]  # Run after last master
+
+- name: Final cluster verification
+  hosts: k8s_masters[0]
+  become: no
+  tasks:
+    - name: Get all nodes status
+      command: kubectl get nodes -o wide
+      register: final_nodes_status
+      
+    - name: Display final cluster status
+      debug:
+        var: final_nodes_status.stdout_lines
+        
+    - name: Verify all masters are upgraded
+      command: kubectl get nodes -l node-role.kubernetes.io/control-plane -o jsonpath='{.items[*].status.nodeInfo.kubeletVersion}'
+      register: master_versions
+      
+    - name: Display master versions
+      debug:
+        msg: "Master kubelet versions: {{ master_versions.stdout.split() | unique }}"
+        
+    - name: Check if upgrade is complete
+      assert:
+        that:
+          - master_versions.stdout.split() | unique | length == 1
+          - kubernetes_target_version.replace('v', '') in master_versions.stdout
+        fail_msg: "Not all masters are upgraded to {{ kubernetes_target_version }}"
+        success_msg: "All masters successfully upgraded to {{ kubernetes_target_version }}"

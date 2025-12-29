@@ -1,0 +1,19 @@
+---
+# Setup automated ETCD backup
+- name: Setup ETCD backup cron job
+  hosts: k8s_masters
+  become: yes
+  serial: 1
+  any_errors_fatal: false
+  tasks:
+    - name: Create backup cron job
+      cron:
+        name: "ETCD Backup"
+        minute: "{{ backup_cron_minute }}"
+        hour: "{{ backup_cron_hour }}"
+        day: "{{ backup_cron_day }}"
+        month: "{{ backup_cron_month }}"
+        weekday: "{{ backup_cron_weekday }}"
+        job: "cd {{ ansible_env.PWD }} && ansible-playbook -i inventories/lab/hosts.ini playbooks/site-backup.yml --limit {{ inventory_hostname }}"
+        user: root
+        state: present

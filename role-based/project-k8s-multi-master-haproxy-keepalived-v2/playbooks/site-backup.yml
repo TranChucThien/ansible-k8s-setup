@@ -1,0 +1,9 @@
+---
+# ETCD backup
+- name: Backup ETCD
+  hosts: k8s_masters
+  become: yes
+  serial: 1 # One at a time
+  any_errors_fatal: false # Continue even if one master fails
+  roles:
+    - etcd/backup

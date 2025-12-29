@@ -1,0 +1,27 @@
+# =============================================================================
+# Remove Cron Job for etcd Backup
+# =============================================================================
+# Purpose: Remove automated etcd backup cron job
+# Usage: ansible-playbook -i inventory playbooks/backup/remove-cron.yml
+# =============================================================================
+
+---
+- name: Remove cron job for etcd backup
+  hosts: localhost
+  become: no
+  
+  tasks:
+    - name: Remove cron job for etcd backup
+      cron:
+        name: "K8s etcd backup"
+        state: absent
+        
+    - name: Validate cron job removal
+      shell: crontab -l | grep "K8s etcd backup" || echo "No backup cron job found"
+      register: cron_validation
+      
+    - name: Display removal confirmation
+      debug:
+        msg:
+          - "Cron job removed successfully!"
+          - "Validation: {{ cron_validation.stdout }}"

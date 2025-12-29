@@ -1,0 +1,14 @@
+---
+# ETCD Restore Configuration
+# Path to backup file on control host (relative or absolute)
+backup_file_path: ""
+
+# Kubernetes cluster configuration
+pod_network_cidr: "10.10.0.0/16"
+control_plane_endpoint: "192.168.10.100:6443"
+
+# ETCD cluster configuration
+etcd_cluster_token: "etcd-cluster-1"
+
+# Preflight error ignores for restore scenarios
+ignore_preflight_errors: "DirAvailable--var-lib-etcd"

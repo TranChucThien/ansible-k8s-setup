@@ -1,0 +1,16 @@
+---
+# Kubernetes Masters Configuration
+
+# Connection settings
+ansible_user: master
+ansible_ssh_pass: 1
+ansible_become_pass: 1
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+# ETCD Backup Settings for Masters
+# Masters have more frequent backups due to critical data
+etcd_backup_retention_days: 14
+
+# Local backup directory organized by environment
+local_backup_dir: "./backups/lab"

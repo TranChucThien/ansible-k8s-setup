@@ -1,0 +1,30 @@
+---
+# Setup automated ETCD backups
+- name: Setup ETCD backup cron job
+  hosts: k8s_masters[0]
+  become: yes
+  tasks:
+    - name: Create backup directory
+      file:
+        path: "{{ backup_dir | default('/opt/etcd-backup') }}"
+        state: directory
+        mode: '0755'
+
+    - name: Install ETCD backup cron job
+      template:
+        src: "{{ playbook_dir }}/../roles/etcd/backup/templates/cron.j2"
+        dest: /etc/cron.d/etcd-backup
+        mode: '0644'
+      vars:
+        backup_dir: "{{ backup_dir | default('/opt/etcd-backup') }}"
+        backup_time: "{{ backup_time | default('0 2') }}"
+        backup_retention_days: "{{ backup_retention_days | default(7) }}"
+        etcd_endpoints: "{{ etcd_endpoints | default('https://127.0.0.1:2379') }}"
+        etcd_ca_file: "{{ etcd_ca_file | default('/etc/kubernetes/pki/etcd/ca.crt') }}"
+        etcd_cert_file: "{{ etcd_cert_file | default('/etc/kubernetes/pki/etcd/server.crt') }}"
+        etcd_key_file: "{{ etcd_key_file | default('/etc/kubernetes/pki/etcd/server.key') }}"
+
+    - name: Restart cron service
+      systemd:
+        name: cron
+        state: restarted

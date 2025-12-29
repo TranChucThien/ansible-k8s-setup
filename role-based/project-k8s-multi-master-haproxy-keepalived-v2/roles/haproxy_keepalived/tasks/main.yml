@@ -1,0 +1,57 @@
+---
+- name: Detect network interface
+  shell: ip route | grep default | awk '{print $5}' | head -1
+  register: detected_interface
+  changed_when: false
+
+- name: Set network interface variable
+  set_fact:
+    network_interface: "{{ detected_interface.stdout }}"
+
+- name: Install HAProxy and Keepalived
+  apt:
+    name: "{{ item }}"
+    state: present
+    update_cache: yes
+  loop:
+    - haproxy
+    - keepalived
+
+- name: Backup existing HAProxy config
+  copy:
+    src: "{{ haproxy_cfg_path }}"
+    dest: "{{ haproxy_backup_path }}"
+    remote_src: yes
+    force: no
+  ignore_errors: yes
+
+- name: Generate HAProxy config from template
+  template:
+    src: haproxy.cfg.j2
+    dest: "{{ haproxy_cfg_path }}"
+    owner: root
+    group: root
+    mode: '0644'
+    validate: 'haproxy -c -f %s'
+  notify: Restart HAProxy
+
+- name: Configure Keepalived
+  template:
+    src: keepalived.conf.j2
+    dest: /etc/keepalived/keepalived.conf
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Keepalived
+
+- name: Ensure HAProxy is enabled and started
+  systemd:
+    name: haproxy
+    enabled: yes
+    state: started
+
+- name: Ensure Keepalived is enabled and started
+  systemd:
+    name: keepalived
+    enabled: yes
+    state: started

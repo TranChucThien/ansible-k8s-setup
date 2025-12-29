@@ -1,0 +1,18 @@
+---
+- name: Generate master join command with certificate key
+  shell: |
+    CERT_KEY=$(kubeadm init phase upload-certs --upload-certs | tail -1)
+    kubeadm token create --print-join-command --certificate-key $CERT_KEY
+  register: master_join_cmd
+
+- name: Generate worker join command
+  shell: kubeadm token create --print-join-command
+  register: worker_join_cmd
+
+- name: Set join commands as facts for all hosts
+  set_fact:
+    master_join_command: "{{ master_join_cmd.stdout }}"
+    worker_join_command: "{{ worker_join_cmd.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['all'] }}"

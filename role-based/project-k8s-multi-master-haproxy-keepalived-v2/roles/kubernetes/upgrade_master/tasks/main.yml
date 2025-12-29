@@ -1,0 +1,125 @@
+---
+- name: Create keyring directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes GPG key for upgrade version
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_upgrade_version }}/deb/Release.key
+    dest: /tmp/kubernetes-release.key
+
+- name: Convert and install keyring
+  command: >
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes upgrade apt repository
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_upgrade_version }}/deb/ /
+
+- name: Unhold kubeadm
+  dpkg_selections:
+    name: kubeadm
+    selection: install
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Upgrade kubeadm
+  apt:
+    name: kubeadm={{ kubernetes_package_version }}
+    state: present
+
+- name: Hold kubeadm
+  dpkg_selections:
+    name: kubeadm
+    selection: hold
+
+- name: Check if this is the first master
+  set_fact:
+    is_first_master: "{{ inventory_hostname == groups['k8s_masters'][0] }}"
+
+- name: Check cluster health before upgrade
+  command: kubectl get nodes
+  when: is_first_master
+  register: cluster_health
+  ignore_errors: yes
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Show upgrade plan (first master only)
+  command: kubeadm upgrade plan --ignore-preflight-errors=CreateJob
+  when: is_first_master
+  register: upgrade_plan
+  ignore_errors: yes
+
+- name: Display upgrade plan
+  debug:
+    var: upgrade_plan.stdout_lines
+  when: is_first_master and upgrade_plan is defined
+
+- name: Apply upgrade (first master only)
+  command: kubeadm upgrade apply {{ kubernetes_target_version }} -y --ignore-preflight-errors=CreateJob
+  when: is_first_master
+  register: upgrade_apply_result
+
+- name: Upgrade node (additional masters only)
+  # command: kubeadm upgrade node --ignore-preflight-errors=CreateJob
+  command: kubeadm upgrade node 
+  when: not is_first_master
+  register: upgrade_node_result
+
+- name: Display upgrade apply result (first master)
+  debug:
+    var: upgrade_apply_result.stdout_lines
+  when: is_first_master and upgrade_apply_result is defined
+
+- name: Display upgrade node result (additional masters)
+  debug:
+    var: upgrade_node_result.stdout_lines
+  when: not is_first_master and upgrade_node_result is defined
+
+- name: Unhold kubelet and kubectl
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Upgrade kubelet and kubectl
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Hold kubelet and kubectl
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: hold
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+
+- name: Wait for kubelet to be ready
+  wait_for:
+    port: 10250
+    host: "{{ ansible_default_ipv4.address }}"
+    timeout: 60

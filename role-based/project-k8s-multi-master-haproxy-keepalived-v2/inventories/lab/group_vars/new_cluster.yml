@@ -1,0 +1,18 @@
+---
+# New Cluster Configuration for Disaster Recovery
+
+# Connection settings
+ansible_user: master
+ansible_ssh_pass: 1
+ansible_become_pass: 1
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'
+
+# ETCD Restore Settings
+# Path to backup file (relative to playbook directory or absolute path)
+backup_file_path: "./backups/lab/k8s-master-1/etcd-backup-2025-12-24-033023.db"
+
+# Cluster configuration for restore
+pod_network_cidr: "10.10.0.0/16"
+control_plane_endpoint: "192.168.10.100:6443"
+ignore_preflight_errors: "DirAvailable--var-lib-etcd"

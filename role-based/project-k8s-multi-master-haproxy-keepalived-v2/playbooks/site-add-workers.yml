@@ -1,0 +1,21 @@
+---
+# Add workers to existing cluster
+- name: Generate join commands
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - kubernetes/generate_join_worker
+
+- name: Common system setup for worker nodes
+  hosts: k8s_workers:k8s_new_workers
+  become: yes
+  roles:
+    - common
+    - containerd
+    - kubernetes/install
+
+- name: Join worker nodes
+  hosts: k8s_workers:k8s_new_workers
+  become: yes
+  roles:
+    - kubernetes/join_worker

@@ -1,0 +1,8 @@
+---
+# Ansible playbook to reset k8s nodes 
+- name: Reset k8s nodes
+  hosts: k8s_cluster
+  become: yes
+  roles:
+    - kubernetes/reset
+

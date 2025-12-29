@@ -1,0 +1,38 @@
+---
+- name: Verify API server version
+  command: >
+    kubectl get pods -n kube-system 
+    -l component=kube-apiserver 
+    -o jsonpath='{.items[0].spec.containers[0].image}'
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: no
+  register: api_server_version
+
+- name: Display API server version
+  debug:
+    msg: "API Server version: {{ api_server_version.stdout }}"
+
+- name: Check control plane pods
+  command: kubectl get pods -n kube-system -l tier=control-plane
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: no
+  register: control_plane_pods
+
+- name: Display control plane pods status
+  debug:
+    var: control_plane_pods.stdout_lines
+
+- name: Test VIP access
+  uri:
+    url: "https://{{ vip_address }}:6443/healthz"
+    method: GET
+    validate_certs: no
+    timeout: 10
+  delegate_to: localhost
+  become: no
+  register: vip_health
+  ignore_errors: yes
+
+- name: Display VIP health check result
+  debug:
+    msg: "VIP Health: {{ 'OK' if vip_health.status == 200 else 'FAILED' }}"

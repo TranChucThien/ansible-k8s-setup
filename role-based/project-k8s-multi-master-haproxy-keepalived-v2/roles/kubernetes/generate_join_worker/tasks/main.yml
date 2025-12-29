@@ -1,0 +1,11 @@
+---
+- name: Generate worker join command
+  shell: kubeadm token create --print-join-command
+  register: worker_join_cmd
+
+- name: Set worker join command as fact for all hosts
+  set_fact:
+    worker_join_command: "{{ worker_join_cmd.stdout }}"
+  delegate_to: "{{ item }}"
+  delegate_facts: true
+  loop: "{{ groups['all'] }}"

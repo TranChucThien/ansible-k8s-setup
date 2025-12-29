@@ -1,0 +1,61 @@
+---
+- name: Read join command from local file
+  local_action: slurp src=./join-command.txt
+  register: join_cmd_file
+  become: no
+
+- name: Set join command variable
+  set_fact:
+    join_command: "{{ join_cmd_file.content | b64decode | trim }}"
+
+- name: Check if node already joined cluster
+  stat:
+    path: /etc/kubernetes/kubelet.conf
+  register: kubelet_conf_check
+
+- name: Join worker to Kubernetes cluster
+  command: "{{ join_command }}"
+  when: not kubelet_conf_check.stat.exists
+
+# For additional masters
+- name: Read master join command from local file
+  local_action: slurp src=./join-command-master.txt
+  register: master_join_cmd_file
+  become: no
+  when: "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"
+
+- name: Set master join command variable
+  set_fact:
+    master_join_command: "{{ master_join_cmd_file.content | b64decode | trim }}"
+  when: "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"
+
+- name: Check if master already joined cluster
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: admin_conf_check
+  when: "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"
+
+- name: Join master to Kubernetes cluster
+  command: "{{ master_join_command }}"
+  when: 
+    - "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"
+    - not admin_conf_check.stat.exists
+
+- name: Create .kube directory for master user
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+  when: "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"
+
+- name: Copy admin.conf to master user kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'
+  when: "('k8s_masters' in group_names and inventory_hostname != groups['k8s_masters'][0]) or 'k8s_new_masters' in group_names"

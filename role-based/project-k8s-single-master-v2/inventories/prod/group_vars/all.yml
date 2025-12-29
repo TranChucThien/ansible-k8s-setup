@@ -1,0 +1,9 @@
+# Global variables for production environment
+kubernetes_version: "1.33"
+pod_network_cidr: "10.10.0.0/16"
+container_runtime: containerd
+calico_version: "v3.29.0"
+
+# Common SSH settings
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

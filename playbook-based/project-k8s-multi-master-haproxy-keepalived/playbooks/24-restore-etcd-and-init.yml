@@ -1,0 +1,79 @@
+---
+- name: Restore etcd and reinit cluster
+  hosts: masters[0]
+  become: yes
+  vars:
+    backup_file_path: "k8s-2025-12-19/etcd/snapshot.db"
+  
+  tasks:
+    - name: Copy backup file to master (if backup_file_path is provided)
+      copy:
+        src: "{{ backup_file_path }}"
+        dest: /tmp/snapshot.db
+        mode: '0644'
+      when: backup_file_path is defined and backup_file_path != ""
+      ignore_errors: yes
+
+    - name: Reset kubeadm
+      command: kubeadm reset --force
+      ignore_errors: yes
+
+    - name: Remove old config
+      file:
+        path: "{{ item }}"
+        state: absent
+      loop:
+        - /etc/kubernetes
+        - /var/lib/kubelet
+        - /var/lib/etcd
+        - ~/.kube
+      ignore_errors: yes
+
+    - name: Check existing workloads
+      command: kubectl get all -A
+      register: existing_workloads
+      ignore_errors: yes
+      failed_when: false
+
+    - name: Display existing workloads
+      debug:
+        msg: "{{ existing_workloads.stdout_lines }}"
+      when: existing_workloads.rc == 0
+
+    - name: Restore etcd snapshot
+      command: etcdctl snapshot restore /tmp/snapshot.db --data-dir /var/lib/etcd
+
+    - name: Initialize cluster
+      command: |
+        kubeadm init \
+          --pod-network-cidr=10.10.0.0/16 \
+          --control-plane-endpoint=192.168.10.100:6443 \
+          --upload-certs \
+          --ignore-preflight-errors=DirAvailable--var-lib-etcd
+      register: kubeadm_init
+      
+    - name: Display kubeadm init output
+      debug:
+        msg: "{{ kubeadm_init.stdout_lines }}"
+
+    - name: Setup kubectl
+      block:
+        - file:
+            path: "{{ ansible_env.HOME }}/.kube"
+            state: directory
+            mode: '0755'
+        - copy:
+            src: /etc/kubernetes/admin.conf
+            dest: "{{ ansible_env.HOME }}/.kube/config"
+            remote_src: yes
+            mode: '0644'
+            owner: "{{ ansible_user }}"
+            group: "{{ ansible_user }}"
+
+    - name: Check cluster status
+      command: kubectl get all -A
+      register: cluster_status
+      
+    - name: Display cluster status
+      debug:
+        msg: "{{ cluster_status.stdout_lines }}"

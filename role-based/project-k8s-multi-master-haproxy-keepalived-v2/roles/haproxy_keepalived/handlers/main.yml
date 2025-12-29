@@ -1,0 +1,10 @@
+---
+- name: Restart HAProxy
+  systemd:
+    name: haproxy
+    state: restarted
+
+- name: Restart Keepalived
+  systemd:
+    name: keepalived
+    state: restarted

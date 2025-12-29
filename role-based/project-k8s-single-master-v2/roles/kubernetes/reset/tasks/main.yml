@@ -1,0 +1,24 @@
+---
+- name: Reset Kubernetes cluster
+  command: kubeadm reset --force
+  ignore_errors: yes
+
+- name: Remove .kube directory
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: absent
+
+- name: Remove CNI configuration
+  file:
+    path: /etc/cni/net.d
+    state: absent
+
+- name: Clean iptables rules
+  shell: |
+    iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+  ignore_errors: yes
+
+- name: Restart containerd
+  systemd:
+    name: containerd
+    state: restarted

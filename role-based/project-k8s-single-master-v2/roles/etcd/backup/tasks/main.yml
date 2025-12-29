@@ -1,0 +1,36 @@
+---
+- name: Create backup directory
+  file:
+    path: "{{ backup_dir }}"
+    state: directory
+    mode: '0755'
+
+- name: Create etcd backup snapshot
+  shell: |
+    ETCDCTL_API=3 etcdctl snapshot save {{ backup_dir }}/etcd-backup-$(date +%Y%m%d-%H%M%S).db \
+    --endpoints={{ etcd_endpoints }} \
+    --cacert={{ etcd_ca_file }} \
+    --cert={{ etcd_cert_file }} \
+    --key={{ etcd_key_file }}
+  register: backup_result
+
+- name: Show backup result
+  debug:
+    var: backup_result.stdout
+
+- name: List recent backups
+  find:
+    paths: "{{ backup_dir }}"
+    patterns: "etcd-backup-*.db"
+    age: "-7d"
+  register: recent_backups
+
+- name: Display recent backups
+  debug:
+    msg: "Found {{ recent_backups.files | length }} backups in last 7 days"
+
+- name: Clean old backups (keep last 10)
+  shell: |
+    cd {{ backup_dir }} && \
+    ls -t etcd-backup-*.db | tail -n +11 | xargs -r rm -f
+  when: recent_backups.files | length > 10

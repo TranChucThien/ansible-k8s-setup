@@ -1,0 +1,70 @@
+---
+- name: Cordon worker node (run on control plane)
+  command: kubectl cordon {{ inventory_hostname }}
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: no
+
+- name: Drain worker node (run on control plane)
+  command: kubectl drain {{ inventory_hostname }} --ignore-daemonsets --delete-emptydir-data
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: no
+
+- name: Create keyring directory
+  file:
+    path: /etc/apt/keyrings
+    state: directory
+    mode: '0755'
+
+- name: Download Kubernetes GPG key for upgrade version
+  get_url:
+    url: https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_upgrade_version }}/deb/Release.key
+    dest: /tmp/kubernetes-release.key
+
+- name: Convert and install keyring
+  command: >
+    gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg /tmp/kubernetes-release.key
+  args:
+    creates: /etc/apt/keyrings/kubernetes-apt-keyring.gpg
+
+- name: Add Kubernetes upgrade apt repository
+  copy:
+    dest: /etc/apt/sources.list.d/kubernetes.list
+    content: |
+      deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v{{ kubernetes_upgrade_version }}/deb/ /
+
+- name: Unhold Kubernetes packages
+  dpkg_selections:
+    name: "{{ item }}"
+    selection: install
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Update apt cache
+  apt:
+    update_cache: yes
+
+- name: Upgrade kubelet and kubectl
+  apt:
+    name: "{{ item }}"
+    state: latest
+  loop:
+    - kubelet
+    - kubectl
+
+- name: Reload systemd daemon
+  systemd:
+    daemon_reload: yes
+
+- name: Restart kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+
+- name: Upgrade kubeadm node
+  command: kubeadm upgrade node
+
+- name: Uncordon worker node (run on control plane)
+  command: kubectl uncordon {{ inventory_hostname }}
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: no

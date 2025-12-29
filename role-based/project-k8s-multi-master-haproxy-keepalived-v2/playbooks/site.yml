@@ -1,0 +1,43 @@
+---
+# Complete Kubernetes multi-master HA cluster deployment
+- name: Setup HAProxy and Keepalived for HA
+  hosts: ha
+  become: yes
+  roles:
+    - haproxy_keepalived
+
+- name: Common system setup for all nodes
+  hosts: k8s_masters:k8s_workers
+  become: yes
+  roles:
+    - common
+    - containerd
+    - kubernetes/install
+
+- name: Initialize first master node
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - kubernetes/master
+    - network/calico
+
+- name: Generate master join command and worker join command
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - kubernetes/generate_join_master
+    - kubernetes/generate_join_worker
+
+    
+
+- name: Join additional masters
+  hosts: k8s_masters[1:]
+  become: yes
+  roles:
+    - kubernetes/join_master
+
+- name: Join worker nodes
+  hosts: k8s_workers
+  become: yes
+  roles:
+    - kubernetes/join_worker

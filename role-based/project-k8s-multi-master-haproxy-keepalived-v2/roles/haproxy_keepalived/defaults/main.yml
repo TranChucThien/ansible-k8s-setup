@@ -1,0 +1,8 @@
+---
+haproxy_cfg_path: /etc/haproxy/haproxy.cfg
+haproxy_backup_path: /etc/haproxy/haproxy.cfg.backup
+vip_address: "192.168.10.100"
+vip_netmask: "24"
+virtual_router_id: "51"
+keepalived_auth_enabled: true
+keepalived_password: "123456"

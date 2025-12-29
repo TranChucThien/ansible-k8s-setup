@@ -1,0 +1,13 @@
+# Global variables for all hosts
+kubernetes_version: "1.33"
+pod_network_cidr: "10.10.0.0/16"
+container_runtime: containerd
+calico_version: "v3.28.0"
+
+# Node naming
+master_prefix: "k8s-master"
+worker_prefix: "k8s-worker"
+
+# Common SSH settings
+ansible_python_interpreter: /usr/bin/python3
+ansible_ssh_common_args: '-o StrictHostKeyChecking=no'

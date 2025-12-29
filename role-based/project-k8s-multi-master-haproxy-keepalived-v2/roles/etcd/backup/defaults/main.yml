@@ -1,0 +1,11 @@
+---
+# ETCD Backup Configuration
+# Remote backup directory on master nodes where snapshots are temporarily stored
+etcd_backup_dir: "/opt/etcd-backup"
+
+# Number of days to retain backup files on control host
+etcd_backup_retention_days: 7
+
+# Local directory on Ansible control host where backups are permanently stored
+# This ensures backups survive even if master nodes fail
+local_backup_dir: "./backups"

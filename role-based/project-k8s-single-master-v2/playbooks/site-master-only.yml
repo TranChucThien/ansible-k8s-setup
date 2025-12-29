@@ -1,0 +1,11 @@
+---
+# Master-only Kubernetes deployment using roles
+- name: Deploy master-only Kubernetes cluster
+  hosts: k8s_masters
+  become: yes
+  roles:
+    - common
+    - containerd
+    - kubernetes/install
+    - kubernetes/master
+    - network/calico

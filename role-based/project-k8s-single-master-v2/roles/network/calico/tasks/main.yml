@@ -1,0 +1,31 @@
+---
+- name: Check if Calico operator CRD exists
+  command: kubectl get crd installations.operator.tigera.io
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  register: calico_operator_crd
+  failed_when: false
+  changed_when: false
+
+- name: Deploy Calico operator
+  command: kubectl create -f https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/tigera-operator.yaml
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  when: "'NotFound' in calico_operator_crd.stderr"
+
+- name: Download Calico custom-resources file
+  get_url:
+    url: https://raw.githubusercontent.com/projectcalico/calico/{{ calico_version }}/manifests/custom-resources.yaml
+    dest: /tmp/custom-resources.yaml
+
+- name: Update CIDR in custom-resources.yaml
+  replace:
+    path: /tmp/custom-resources.yaml
+    regexp: 'cidr: 192\.168\.0\.0/16'
+    replace: 'cidr: {{ pod_network_cidr }}'
+
+- name: Apply Calico custom resources
+  command: kubectl apply -f /tmp/custom-resources.yaml
+  environment:
+    KUBECONFIG: "/home/{{ ansible_user }}/.kube/config"
+  ignore_errors: yes

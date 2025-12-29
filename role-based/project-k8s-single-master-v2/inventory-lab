@@ -1,0 +1,23 @@
+# Inventory for lab environment
+[masters]
+192.168.10.138
+192.168.10.139
+
+[workers]   
+192.168.10.142
+192.168.10.144
+
+
+[masters:vars]
+ansible_user=master
+ansible_ssh_pass=1
+ansible_become_pass=1
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'
+
+[workers:vars]
+ansible_user=worker
+ansible_ssh_pass=1
+ansible_become_pass=1
+ansible_python_interpreter=/usr/bin/python3
+ansible_ssh_common_args='-o StrictHostKeyChecking=no'

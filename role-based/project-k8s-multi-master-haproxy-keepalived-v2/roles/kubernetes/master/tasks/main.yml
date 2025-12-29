@@ -1,0 +1,32 @@
+---
+- name: Check if cluster already initialized
+  stat:
+    path: /etc/kubernetes/admin.conf
+  register: kubeadm_init_check
+
+- name: Initialize Kubernetes cluster with controlPlaneEndpoint
+  command: kubeadm init --pod-network-cidr={{ pod_network_cidr }} --control-plane-endpoint={{ api_server_address }}:{{ api_server_port }} --upload-certs
+  register: kubeadm_init_output
+  when: not kubeadm_init_check.stat.exists
+
+- name: Show kubeadm init output
+  debug:
+    var: kubeadm_init_output.stdout
+  when: kubeadm_init_output.changed
+
+- name: Create .kube directory for user
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: directory
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0755'
+
+- name: Copy admin.conf to user kube config
+  copy:
+    src: /etc/kubernetes/admin.conf
+    dest: "/home/{{ ansible_user }}/.kube/config"
+    remote_src: yes
+    owner: "{{ ansible_user }}"
+    group: "{{ ansible_user }}"
+    mode: '0644'

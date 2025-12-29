@@ -1,0 +1,49 @@
+---
+- name: Upgrade Kubernetes Masters
+  hosts: k8s_masters:k8s_new_masters
+  become: yes
+  serial: 1  # Upgrade one master at a time
+  vars:
+    kubernetes_upgrade_version: "1.34"
+    kubernetes_target_version: "v1.34.3"
+    kubernetes_package_version: "1.34.*"
+  
+  pre_tasks:
+    - name: Verify cluster health before upgrade
+      command: kubectl get nodes
+      delegate_to: "{{ groups['k8s_masters'][0] }}"
+      become: no
+      run_once: true
+      register: cluster_status
+      
+    - name: Display current cluster status
+      debug:
+        var: cluster_status.stdout_lines
+      run_once: true
+
+  roles:
+    - kubernetes/upgrade_master
+
+  post_tasks:
+    - name: Verify node upgrade
+      command: kubectl get nodes {{ inventory_hostname }} -o wide
+      delegate_to: "{{ groups['k8s_masters'][0] }}"
+      become: true
+      register: node_status
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
+      
+    - name: Display node status after upgrade
+      debug:
+        var: node_status.stdout_lines
+        
+    - name: Wait for node to be Ready
+      command: kubectl get nodes {{ inventory_hostname }} -o jsonpath='{.status.conditions[?(@.type=="Ready")].status}'
+      delegate_to: "{{ groups['k8s_masters'][0] }}"
+      become: true
+      register: node_ready
+      until: node_ready.stdout == "True"
+      retries: 30
+      delay: 10
+      environment:
+        KUBECONFIG: /etc/kubernetes/admin.conf
