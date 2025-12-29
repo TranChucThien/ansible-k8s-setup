@@ -1,4 +1,0 @@
----
-# Common role defaults
-master_prefix: "k8s-master"
-worker_prefix: "k8s-worker"

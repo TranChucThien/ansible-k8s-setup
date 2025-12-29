@@ -1,1 +1,0 @@
-kubeadm join 192.168.10.141:6443 --token 8ms3i6.5sdrwqakrxj1x3g5 --discovery-token-ca-cert-hash sha256:9d2ed3b9866ba755dbfd139fc6c10b77f3599365d64338369fd76c2d69377c61 

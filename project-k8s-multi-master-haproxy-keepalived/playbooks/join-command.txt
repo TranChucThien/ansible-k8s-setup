@@ -1,1 +1,0 @@
-kubeadm join 192.168.10.100:6443 --token 11nngq.l8a5ovlhwflxgtx8 --discovery-token-ca-cert-hash sha256:5790efe1cc220b7ae89230aed873cdb15d418fb9bf8686bfea6d2d92d4de1a96 
