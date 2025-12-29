@@ -1,65 +1,67 @@
 # Kubernetes Ansible Deployment
 
-Deploy Kubernetes clusters on Ubuntu 24.04 using Ansible with multiple architecture options.
+Deploy Kubernetes clusters on Ubuntu 24.04 using Ansible with two distinct approaches.
 
-## 🚀 Quick Links
+## 🎯 Choose Your Approach
 
-- **[Single Master](project-k8s-single-master/)** - Simple cluster for dev/test/learning
-- **[Multi-Master HA with HAProxy](project-k8s-multi-master-haproxy/)** - HA cluster with HAProxy
-- **[Multi-Master HA with HAProxy + Keepalived](project-k8s-multi-master-haproxy-keepalived/)** - Full HA with VIP failover
+### 📚 **Playbook-Based** - Learning & Understanding
+**[playbook-based/](playbook-based/)**
+
+Traditional Ansible playbooks for educational purposes:
+- **Easy to understand** - Linear execution flow
+- **Learning focused** - Great for understanding Kubernetes setup
+- **Simple structure** - Direct playbook approach
+- **Quick modifications** - Easy to customize and experiment
+
+### 🏗️ **Role-Based** - Production & Best Practices
+**[role-based/](role-based/)**
+
+Modern Ansible roles architecture for production use:
+- **Modular design** - Reusable and maintainable components
+- **Production ready** - Enterprise-grade deployments
+- **Advanced operations** - Automated backup, restore, upgrade
+- **Multi-environment** - Dev, staging, production support
 
 ## 📁 Repository Structure
 
 ```
 ansible-k8s/
-├── project-k8s-single-master/           # Single master deployments
-│   ├── project-k8s-single-master/      # Basic playbook approach
-│   └── project-k8s-single-master-v2/   # Advanced roles approach
-├── project-k8s-multi-master-haproxy/   # Multi-master with HAProxy
-├── project-k8s-multi-master-haproxy-keepalived/  # Full HA setup
+├── playbook-based/                     # Traditional playbook approach
+│   ├── project-k8s-single-master/     # Single master (playbooks)
+│   ├── project-k8s-multi-master-haproxy/  # Multi-master + HAProxy
+│   └── project-k8s-multi-master-haproxy-keepalived/  # Full HA setup
+├── role-based/                         # Modern roles architecture
+│   ├── project-k8s-single-master-v2/  # Single master (roles)
+│   └── project-k8s-multi-master-haproxy-keepalived-v2/  # Enterprise HA
 ├── docs/                               # Documentation
-│   ├── setup-guides/
-│   ├── operations/
-│   ├── backup-restore/
-│   └── troubleshooting/
 ├── backups/                            # Cluster backups
 └── README.md                           # This file
 ```
 
-## 🎯 Choose Your Deployment
+## 🚀 Quick Start
 
-### 🔰 **Beginners** - Start Here
-**[project-k8s-single-master/project-k8s-single-master/](project-k8s-single-master/project-k8s-single-master/)**
-- Simple playbook structure
-- Easy to understand and modify
-- Perfect for learning Ansible + Kubernetes
-
-### 🏗️ **Advanced** - Production Ready
-**[project-k8s-single-master/project-k8s-single-master-v2/](project-k8s-single-master/project-k8s-single-master-v2/)**
-- Ansible roles architecture
-- Multi-environment support
-- Production best practices
-
-### 🚀 **High Availability** - Enterprise
-**[project-k8s-multi-master-haproxy-keepalived/](project-k8s-multi-master-haproxy-keepalived/)**
-- Multiple master nodes
-- Load balancer with failover
-- Zero downtime deployments
-
-## ⚡ Quick Start
-
+### For Learning (Playbook-Based)
 ```bash
-# Clone repository
-git clone <repository-url>
-cd ansible-k8s
-
-# Choose your deployment type
-cd project-k8s-single-master/project-k8s-single-master/  # Beginner
-# OR
-cd project-k8s-single-master/project-k8s-single-master-v2/  # Advanced
-
-# Deploy cluster
+cd playbook-based/project-k8s-single-master/
 ansible-playbook -i inventory-lab playbooks/site.yml
+```
+
+### For Production (Role-Based)
+```bash
+cd role-based/project-k8s-single-master-v2/
+ansible-playbook -i inventories/lab playbooks/site.yml
+```
+
+## 🎓 Learning Path
+
+```
+1. Playbook-Based (Learning)
+   ├── Single Master → Multi-Master → HA Setup
+   └── Understand concepts and flow
+
+2. Role-Based (Production)
+   ├── Single Master v2 → Multi-Master v2
+   └── Production deployment and operations
 ```
 
 ## 🔧 Requirements
@@ -73,9 +75,9 @@ ansible-playbook -i inventory-lab playbooks/site.yml
 ## 📦 What Gets Installed
 
 - **Container Runtime**: containerd
-- **Kubernetes**: v1.33.x
+- **Kubernetes**: v1.33.x (v1.34.x in role-based)
 - **CNI Plugin**: Calico v3.28.0
-- **Load Balancer** (HA only): HAProxy + Keepalived
+- **Load Balancer** (HA): HAProxy + Keepalived
 - **Backup Tools**: etcdctl, etcdutl
 
 ## 📚 Documentation
@@ -84,10 +86,6 @@ ansible-playbook -i inventory-lab playbooks/site.yml
 - **[Operations Guide](docs/operations/)** - Day-to-day management
 - **[Backup & Restore](docs/backup-restore/)** - Data protection
 - **[Troubleshooting](docs/troubleshooting/)** - Common issues and solutions
-
-## 🔄 Version History
-
-See [CHANGELOG.md](CHANGELOG.md) for detailed version history.
 
 ## ⚠️ Security Notice
 
