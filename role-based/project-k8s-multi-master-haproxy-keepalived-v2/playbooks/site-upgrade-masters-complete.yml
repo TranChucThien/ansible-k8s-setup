@@ -1,35 +1,9 @@
 ---
-- name: Backup ETCD before upgrade
-  hosts: k8s_masters[0]
-  become: yes
-  roles:
-    - etcd/backup
+- import_playbook: site-backup.yml
 
-- name: Upgrade Kubernetes Masters
-  hosts: k8s_masters
-  become: yes
-  serial: 1
-  vars:
-    kubernetes_upgrade_version: "1.34"
-    kubernetes_target_version: "v1.34.3"
-    kubernetes_package_version: "1.34.*"
-  
-  pre_tasks:
-    - name: Display upgrade information
-      debug:
-        msg: |
-          Upgrading {{ inventory_hostname }}
-          Role: {{ 'First Master (upgrade apply)' if inventory_hostname == groups['k8s_masters'][0] else 'Additional Master (upgrade node)' }}
-          Target Version: {{ kubernetes_target_version }}
+- import_playbook: site-upgrade-masters.yml
 
-  roles:
-    - kubernetes/upgrade_master
-
-  post_tasks:
-    - name: Include verification tasks
-      include_tasks: ../roles/kubernetes/upgrade_master/tasks/verify.yml
-      run_once: true
-      when: inventory_hostname == groups['k8s_masters'][-1]  # Run after last master
+- import_playbook: site-upgrade-workers.yml
 
 - name: Final cluster verification
   hosts: k8s_masters[0]

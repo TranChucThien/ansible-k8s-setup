@@ -74,3 +74,23 @@
   delegate_to: localhost
   become: no
   when: backup_result is succeeded
+
+- name: Check snapshot status
+  shell: |
+    ETCDCTL_API=3 etcdctl snapshot status {{ etcd_backup_dir }}/{{ backup_filename }} \
+    --write-out=table
+  register: snapshot_status
+  when: backup_result is succeeded
+
+- name: Display snapshot status
+  debug:
+    var: snapshot_status.stdout_lines
+  when: backup_result is succeeded
+
+- name: Display backup locations
+  debug:
+    msg:
+      - "Backup saved to:"
+      - "- Remote (master): {{ etcd_backup_dir }}/{{ backup_filename }}"
+      - "- Local (control): {{ local_backup_dir }}/{{ inventory_hostname }}/{{ backup_filename }}"
+  when: backup_result is succeeded
