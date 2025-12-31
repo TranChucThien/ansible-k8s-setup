@@ -1,7 +1,0 @@
----
-# Reset Kubernetes cluster
-- name: Reset all nodes
-  hosts: k8s_cluster
-  become: yes
-  roles:
-    - kubernetes/reset

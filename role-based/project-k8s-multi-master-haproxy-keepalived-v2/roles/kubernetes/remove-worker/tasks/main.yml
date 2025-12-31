@@ -1,0 +1,18 @@
+---
+- name: Cordon worker nodes (prevent new pods)
+  shell: kubectl cordon {{ item }}
+  loop: "{{ groups['k8s_remove_workers'] }}"
+  when: groups['k8s_remove_workers'] is defined
+  ignore_errors: true
+
+- name: Drain worker nodes (evict existing pods)
+  shell: kubectl drain {{ item }} --ignore-daemonsets --delete-emptydir-data --force
+  loop: "{{ groups['k8s_remove_workers'] }}"
+  when: groups['k8s_remove_workers'] is defined
+  ignore_errors: true
+
+- name: Delete worker nodes from cluster
+  shell: kubectl delete node {{ item }}
+  loop: "{{ groups['k8s_remove_workers'] }}"
+  when: groups['k8s_remove_workers'] is defined
+  ignore_errors: true

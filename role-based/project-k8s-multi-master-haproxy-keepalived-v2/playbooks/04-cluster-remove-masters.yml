@@ -1,0 +1,14 @@
+---
+- name: Remove Master Node from Kubernetes Cluster
+  hosts: k8s_remove_masters
+  gather_facts: false
+  serial: 1
+  roles:
+    - kubernetes/remove-master
+
+# Reset Kubernetes cluster
+- name: Reset Master Node after Removal
+  hosts: k8s_remove_masters
+  become: yes
+  roles:
+    - kubernetes/reset-node

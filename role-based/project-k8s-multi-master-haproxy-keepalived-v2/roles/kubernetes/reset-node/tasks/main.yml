@@ -1,0 +1,60 @@
+---
+- name: Stop kubelet and containerd
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+  loop:
+    - kubelet
+    - containerd
+  ignore_errors: yes
+
+- name: Kill remaining processes using Kubernetes ports
+  shell: |
+    # Kill processes on ports 6443, 10259, 10257
+    for port in 6443 10259 10257 2379 2380; do
+      pid=$(lsof -ti:$port 2>/dev/null || true)
+      if [ ! -z "$pid" ]; then
+        kill -9 $pid 2>/dev/null || true
+      fi
+    done
+  ignore_errors: yes
+
+- name: Reset kubeadm
+  command: kubeadm reset -f
+
+- name: Remove .kube directory
+  file:
+    path: "/home/{{ ansible_user }}/.kube"
+    state: absent
+
+- name: Remove root .kube directory
+  file:
+    path: /root/.kube
+    state: absent
+
+- name: Remove /var/lib/etcd directory
+  file:
+    path: /var/lib/etcd
+    state: absent
+
+- name: Remove CNI configuration
+  file:
+    path: /etc/cni/net.d
+    state: absent
+
+- name: Remove iptables rules
+  shell: |
+    iptables -F && iptables -t nat -F && iptables -t mangle -F && iptables -X
+  ignore_errors: yes
+
+- name: Clean up static pod manifests
+  file:
+    path: /etc/kubernetes/manifests
+    state: absent
+
+- name: Restart and enable kubelet
+  systemd:
+    name: kubelet
+    state: restarted
+    enabled: yes
+  

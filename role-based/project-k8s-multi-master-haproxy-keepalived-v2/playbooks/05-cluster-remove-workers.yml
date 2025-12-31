@@ -1,0 +1,14 @@
+---
+- name: Remove Worker Node from Kubernetes Cluster
+  hosts: k8s_masters[0]
+  gather_facts: false
+  
+  roles:
+    - kubernetes/remove-worker
+
+# Reset Kubernetes cluster
+- name: Reset Worker Node after Removal
+  hosts: k8s_remove_workers
+  become: yes
+  roles:
+    - kubernetes/reset-node

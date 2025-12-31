@@ -1,0 +1,18 @@
+---
+# Add masters to existing cluster
+
+- name: Generate master join command
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - kubernetes/generate_join_master
+  tags: always
+
+- name: Setup new master nodes and join them to the cluster
+  hosts: k8s_masters[1:]:k8s_new_masters
+  become: yes
+  roles:
+    - system-common
+    - containerd
+    - kubernetes/k8s-install
+    - kubernetes/join_master

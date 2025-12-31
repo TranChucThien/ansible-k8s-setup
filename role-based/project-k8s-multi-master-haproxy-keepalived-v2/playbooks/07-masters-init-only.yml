@@ -1,0 +1,11 @@
+---
+# Deploy master nodes only
+- name: Setup first master node to initialize the cluster
+  hosts: k8s_masters[0]
+  become: yes
+  roles:
+    - system-common
+    - containerd
+    - kubernetes/install-k8s-components
+    - kubernetes/master-init-cluster
+    - network/calico

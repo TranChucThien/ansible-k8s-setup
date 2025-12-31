@@ -1,0 +1,88 @@
+---
+- name: Check if removing masters[0]
+  fail:
+    msg: "Cannot remove masters[0]. Move another master to masters[0] position first."
+  when: 
+    - inventory_hostname == groups['k8s_masters'][0]
+
+- name: Get first etcd pod name
+  shell: kubectl get pods -n kube-system -l component=etcd -o name | head -1 | cut -d'/' -f2
+  register: etcd_pod_result
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: yes
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  retries: 3
+  delay: 5
+
+- name: Get etcd member ID for target node
+  shell: |
+    kubectl exec -n kube-system {{ etcd_pod_result.stdout }} -- etcdctl \
+      --endpoints=https://127.0.0.1:2379 \
+      --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+      --cert=/etc/kubernetes/pki/etcd/server.crt \
+      --key=/etc/kubernetes/pki/etcd/server.key \
+      member list | grep {{ inventory_hostname }} | cut -d',' -f1
+  register: member_id_result
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: yes
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  retries: 3
+  delay: 5
+
+- name: Remove member from etcd cluster
+  shell: |
+    kubectl exec -n kube-system {{ etcd_pod_result.stdout }} -- etcdctl \
+      --endpoints=https://127.0.0.1:2379 \
+      --cacert=/etc/kubernetes/pki/etcd/ca.crt \
+      --cert=/etc/kubernetes/pki/etcd/server.crt \
+      --key=/etc/kubernetes/pki/etcd/server.key \
+      member remove {{ member_id_result.stdout }}
+  when: member_id_result.stdout != ""
+  ignore_errors: true
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: yes
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Stop kubelet and container runtime
+  systemd:
+    name: "{{ item }}"
+    state: stopped
+    enabled: no
+  loop:
+    - kubelet
+    - containerd  
+  become: yes
+
+- name: Check if node exists in cluster
+  shell: kubectl get node {{ inventory_hostname }}
+  register: node_exists
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: yes
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+  failed_when: false
+  retries: 5
+  delay: 3
+
+- name: Delete node from Kubernetes cluster
+  shell: kubectl delete node {{ inventory_hostname }} --force --grace-period=0
+  when: node_exists.rc == 0
+  ignore_errors: true
+  delegate_to: "{{ groups['k8s_masters'][0] }}"
+  become: yes
+  retries: 3
+  delay: 5
+  environment:
+    KUBECONFIG: /etc/kubernetes/admin.conf
+
+- name: Display node deletion result
+  debug:
+    msg: |
+      {% if node_exists.rc != 0 %}
+      Node {{ inventory_hostname }} not found in cluster (already removed)
+      {% else %}
+      Node {{ inventory_hostname }} deletion attempted
+      {% endif %}
