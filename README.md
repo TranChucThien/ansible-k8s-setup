@@ -49,7 +49,7 @@ ansible-playbook -i inventory-lab playbooks/site.yml
 ### For Production (Role-Based)
 ```bash
 cd role-based/project-k8s-single-master-v2/
-ansible-playbook -i inventories/lab playbooks/site.yml
+ansible-playbook -i inventories/lab/hosts.ini playbooks/01-cluster-deploy.yml
 ```
 
 ## 🎓 Learning Path
@@ -82,10 +82,12 @@ ansible-playbook -i inventories/lab playbooks/site.yml
 
 ## 📚 Documentation
 
-- **[Setup Guides](docs/setup-guides/)** - Installation and configuration
-- **[Operations Guide](docs/operations/)** - Day-to-day management
-- **[Backup & Restore](docs/backup-restore/)** - Data protection
-- **[Troubleshooting](docs/troubleshooting/)** - Common issues and solutions
+- **[Setup Guides](docs/01-setup-guides/)** - Installation and configuration
+- **[Operations Guide](docs/02-operations-guide/)** - Day-to-day management
+- **[Backup & Restore](docs/03-backup-restore/)** - Data protection
+- **[Upgrade Strategies](docs/04-upgrade-strategies/)** - Version management
+- **[HA Testing](docs/05-test-ha-cluster/)** - High availability validation
+- **[Troubleshooting](docs/06-troubleshooting/)** - Common issues and solutions
 
 ## ⚠️ Security Notice
 
